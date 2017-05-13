@@ -2,7 +2,7 @@
 
 a <- read.csv('./data/database/Occurences.csv', sep = ";")
 
-base2016 <- read.table("d:/r/Git/FishBiogeography/data/BasePoisson102016_2.csv", h = T, sep =  ";")
+base2016 <- read.table("j:/r/projects/FishBiogeography/data/BasePoisson102016_2.csv", h = T, sep =  ";")
 
 fish.info <- unique(base2016[, c("FB_REF2015", "fresh", "brack", "salt", "AnaCat")])
 
@@ -24,9 +24,8 @@ fishdb <- fishdb[-which(fishdb$Species %in% fish.info$FB_REF2015[which(fish.info
 levels(fishdb$Species) <- paste0("sp", 1:nlevels(fishdb$Species))
 
 
-fishdb1 <- fishdb[which(fishdb$Status == "native"), c(1, 2)]
-fishdb2 <- fishdb[, c(1, 2)]
-
+fishdb1 <- droplevels(fishdb[which(fishdb$Status == "native"), c(1, 2)])
+fishdb2 <- droplevels(fishdb[, c(1, 2)])
 
 
 save(fishdb1, file = "./data/data_cours/fishdb1.RData")
