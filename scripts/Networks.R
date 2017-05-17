@@ -1,6 +1,6 @@
 # 1. 
 source("./scripts/network_functions.R")
-
+library(maptools)
 # Shapefiles
 basins <- readShapeSpatial("./data/data_cours/basin2013_simplif")
 
