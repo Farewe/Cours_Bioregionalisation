@@ -36,7 +36,7 @@ save(fishdb2, file = "./data/data_cours/fishdb2.RData")
 
 
 #### shapefile data ####
-library(maptools)
-basins <- readShapeSpatial("./data/database/basin2013_simplif")
+library(rgdal)
+basins <- readOGR("./data/database/basin2013_simplif")
 levels(fishdb$Basin)[!(levels(fishdb$Basin) %in% levels(basins@data$BASIN))]
 levels(basins@data$BASIN)[!(levels(basins@data$BASIN) %in% levels(fishdb$Basin))]

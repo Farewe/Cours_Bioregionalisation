@@ -1,11 +1,11 @@
-library(maptools)
+
 library(betapart)
 library(recluster)
 library(dendextend)
 
 
 # Shapefiles
-basins <- readShapeSpatial("./data/data_cours/basin2013_simplif")
+basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
 
 # Occurrence databases
 load("./data/data_cours/fishdb1.RData")
@@ -17,6 +17,7 @@ fishdb2 <- as.matrix(table(fishdb2$Basin, fishdb2$Species))
 #### Base 1 ####
 # 1.
 fishdb1 <- fishdb1[-which(rowSums(fishdb1) <= 20), ] # Retrait sites à faible richesse
+basins <- basins[which(basins$BASIN %in% rownames(fishdb1)), ]
 
 
 # 2.
@@ -29,17 +30,17 @@ fish.nmds1 <- metaMDS(dist.fish1$beta.sim, center=TRUE)
 
 col.fish1 <- recluster.col(fish.nmds1$points)
 
-col.fish1 <- rbind(col.fish1,
-                  matrix(data = c(NA, NA, 200, 200, 200),
-                         nr = length(which(!(basins@data$BASIN %in% rownames(col.fish1)))),
-                         nc = 5, byrow = T,
-                         dimnames = list(basins@data$BASIN[which(!(basins@data$BASIN %in% rownames(col.fish1)))])))
+basins@data <- data.frame(basins@data, 
+                          col.fish1[match(basins@data$BASIN,
+                                          rownames(col.fish1)), ])
+
 
 op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
 recluster.plot.col(col.fish1[1:fish.nmds1$nobj, ])
-plot(basins, col = rgb(red = col.fish1[match(basins@data$BASIN, rownames(col.fish1)), 3],
-                       green = col.fish1[match(basins@data$BASIN, rownames(col.fish1)), 4],
-                       blue = col.fish1[match(basins@data$BASIN, rownames(col.fish1)), 5],
+
+plot(basins, col = rgb(red = basins@data$X3,
+                       green = basins@data$X4,
+                       blue = basins@data$X5,
                        maxColorValue = 255))
 
 par(op)
@@ -55,8 +56,8 @@ plot(tree.fish1$cons,
                      maxColorValue = 255))
 
 # 5.
-coph.fish1 <- cophenetic(as.hclust(tree.fish1$cons))
-coph.fish1 <- as.matrix(coph.fish1)
+coph.fish1 <- as.matrix(cophenetic(as.hclust(tree.fish1$cons)))
+# Pour corriger l'ordre des sites
 coph.fish1 <- coph.fish1[match(attr(dist.fish1$beta.sim, "Labels"), 
                                rownames(coph.fish1)),
                          match(attr(dist.fish1$beta.sim, "Labels"), 
