@@ -2,7 +2,7 @@
 library(betapart)
 library(recluster)
 library(dendextend)
-
+library(rgdal)
 
 # Shapefiles
 basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
@@ -11,8 +11,6 @@ basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
 load("./data/data_cours/fishdb1.RData")
 load("./data/data_cours/fishdb2.RData")
 fishdb1 <- as.matrix(table(fishdb1$Basin, fishdb1$Species))
-fishdb2 <- as.matrix(table(fishdb2$Basin, fishdb2$Species))
-
 
 #### Base 1 ####
 # 1.
@@ -29,6 +27,7 @@ dist.fish1 <- beta.pair(fishdb1,
 fish.nmds1 <- metaMDS(dist.fish1$beta.sim, center=TRUE)
 
 col.fish1 <- recluster.col(fish.nmds1$points)
+colnames(col.fish1) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
 
 basins@data <- data.frame(basins@data, 
                           col.fish1[match(basins@data$BASIN,
@@ -38,9 +37,9 @@ basins@data <- data.frame(basins@data,
 op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
 recluster.plot.col(col.fish1[1:fish.nmds1$nobj, ])
 
-plot(basins, col = rgb(red = basins@data$X3,
-                       green = basins@data$X4,
-                       blue = basins@data$X5,
+plot(basins, col = rgb(red = basins@data$nmdsred,
+                       green = basins@data$nmdsgreen,
+                       blue = basins@data$nmdsblue,
                        maxColorValue = 255))
 
 par(op)
@@ -89,21 +88,15 @@ while(k < nclust1)
   k <- max(clusters.fish1)
 }
 
-# Attention à remettre les noms dans l'ordre alphabétique :
+# Attention à remettre les noms dans l’ordre alphabétique pour bien l’étape 7 (car la NMDS a les noms dans l’ordre alphabétique)
 clusters.fish1 <- clusters.fish1[order(names(clusters.fish1))]
 
 
 # 7.
 groupcol.fish1 <- recluster.group.col(col.fish1[1:fish.nmds1$nobj, ], 
                                       clusters.fish1)$all
-groupcol.fish1 <- rbind(groupcol.fish1,
-                        matrix(data = c(NA, NA, 200, 200, 200),
-                               nr = length(which(!(basins@data$BASIN %in% rownames(groupcol.fish1)))),
-                               nc = 5, byrow = T,
-                               dimnames = list(basins@data$BASIN[which(!(basins@data$BASIN %in% rownames(groupcol.fish1)))])))
 
 # 8.
-basins@data$cluster <- NA
 basins@data$cluster[match(names(clusters.fish1), basins@data$BASIN)] <- clusters.fish1
 basins@data[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  groupcol.fish1[match(basins@data$BASIN, rownames(groupcol.fish1)), ]
 
@@ -115,6 +108,7 @@ plot(basins, col = rgb(red = basins@data$r1,
 
 #### Base 2 ####
 # 9.
+fishdb2 <- as.matrix(table(fishdb2$Basin, fishdb2$Species))
 fishdb2 <- fishdb2[rownames(fishdb2) %in% rownames(fishdb1), ] 
 
 # Distance matrix
@@ -126,29 +120,26 @@ dist.fish2 <- beta.pair(fishdb2,
 fish.nmds2 <- metaMDS(dist.fish2$beta.sim, center=TRUE)
 
 col.fish2 <- recluster.col(fish.nmds2$points)
+colnames(col.fish2) <- c("nmdsx2", "nmdsy2", "nmdsred2", "nmdsgreen2", "nmdsblue2")
 
-col.fish2 <- rbind(col.fish2,
-                   matrix(data = c(NA, NA, 200, 200, 200),
-                          nr = length(which(!(basins@data$BASIN %in% rownames(col.fish2)))),
-                          nc = 5, byrow = T,
-                          dimnames = list(basins@data$BASIN[which(!(basins@data$BASIN %in% rownames(col.fish2)))])))
+basins@data <- data.frame(basins@data, 
+                          col.fish2[match(basins@data$BASIN,
+                                          rownames(col.fish2)), ])
+
 
 op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
 recluster.plot.col(col.fish2[1:fish.nmds2$nobj, ])
-plot(basins, col = rgb(red = col.fish2[match(basins@data$BASIN, rownames(col.fish2)), 3],
-                       green = col.fish2[match(basins@data$BASIN, rownames(col.fish2)), 4],
-                       blue = col.fish2[match(basins@data$BASIN, rownames(col.fish2)), 5],
+
+plot(basins, col = rgb(red = basins@data$nmdsred2,
+                       green = basins@data$nmdsgreen2,
+                       blue = basins@data$nmdsblue2,
                        maxColorValue = 255))
 
 par(op)
 
-# Hierarchical clustering
-# tree.fish1 <- hclust(dist.fish1$beta.sim, method = "average")
-# plot(tree.fish1)
 
 # Consensus tree
 tree.fish2 <- recluster.cons(dist.fish2$beta.sim, p = 0.5)
-# boot.fish1 <- recluster.boot(tree.fish1$cons, dist.fish1$beta.sim, tr = 10, boot = 50)
 
 op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
 plot(tree.fish1$cons,
@@ -164,22 +155,18 @@ plot(tree.fish2$cons,
                      maxColorValue = 255))
 par(op)
 
+
+
 # Cut tree at the same height as before
 clusters.fish2 <- cutree(tree.fish2$cons, h = h)
 # Attention à remettre les noms dans l'ordre alphabétique :
 clusters.fish2 <- clusters.fish2[order(names(clusters.fish2))]
 
+
 groupcol.fish2 <- recluster.group.col(col.fish2[1:fish.nmds2$nobj, ], 
                                       clusters.fish2)$all
 
-groupcol.fish2 <- rbind(groupcol.fish2,
-                        matrix(data = c(NA, NA, 200, 200, 200),
-                               nr = length(which(!(basins@data$BASIN %in% rownames(groupcol.fish2)))),
-                               nc = 5, byrow = T,
-                               dimnames = list(basins@data$BASIN[which(!(basins@data$BASIN %in% rownames(groupcol.fish2)))])))
-
-basins@data$cluster <- NA
-basins@data$cluster[match(names(clusters.fish2), basins@data$BASIN)] <- clusters.fish2
+basins@data$cluster2[match(names(clusters.fish2), basins@data$BASIN)] <- clusters.fish2
 basins@data[, c("nmdsx2", "nmdsy2", "r2", "g2", "b2")] <-  groupcol.fish2[match(basins@data$BASIN, rownames(groupcol.fish2)), ]
 
 
