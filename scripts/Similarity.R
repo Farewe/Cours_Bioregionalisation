@@ -4,6 +4,9 @@ library(recluster)
 library(dendextend)
 library(rgdal)
 
+
+
+
 # Shapefiles
 basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
 
@@ -27,6 +30,7 @@ dist.fish1 <- beta.pair(fishdb1,
 fish.nmds1 <- metaMDS(dist.fish1$beta.sim, center=TRUE)
 
 col.fish1 <- recluster.col(fish.nmds1$points)
+
 colnames(col.fish1) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
 
 basins@data <- data.frame(basins@data, 
@@ -47,7 +51,7 @@ par(op)
 
 
 # 4.
-tree.fish1 <- recluster.cons(dist.fish1$beta.sim, p = 0.5)
+tree.fish1 <- recluster.cons(dist.fish1$beta.sim, tr = 100)
 plot(tree.fish1$cons,
      tip.color = rgb(red = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 3],
                      green = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 4],
@@ -79,6 +83,7 @@ abline(h = 0.999, lty = 3)
 nclust1 <- fish.cut1$nclust[which(fish.cut1$expl.div > 0.9)][1]
 abline(v = nclust1, lty = 2)
 
+
 k <- 0
 h <- 1
 while(k < nclust1)
@@ -88,7 +93,9 @@ while(k < nclust1)
   k <- max(clusters.fish1)
 }
 
-# Attention à remettre les noms dans l’ordre alphabétique pour bien l’étape 7 (car la NMDS a les noms dans l’ordre alphabétique)
+h
+
+# Attention à remettre les noms dans l’ordre alphabétique pour l’étape 7 (car la NMDS a les noms dans l’ordre alphabétique)
 clusters.fish1 <- clusters.fish1[order(names(clusters.fish1))]
 
 
@@ -98,7 +105,8 @@ groupcol.fish1 <- recluster.group.col(col.fish1[1:fish.nmds1$nobj, ],
 
 # 8.
 basins@data$cluster[match(names(clusters.fish1), basins@data$BASIN)] <- clusters.fish1
-basins@data[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  groupcol.fish1[match(basins@data$BASIN, rownames(groupcol.fish1)), ]
+basins@data[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  
+  groupcol.fish1[match(basins@data$BASIN, rownames(groupcol.fish1)), ]
 
 plot(basins, col = rgb(red = basins@data$r1,
                        green = basins@data$g1,
