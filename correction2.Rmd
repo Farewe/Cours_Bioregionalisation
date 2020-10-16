@@ -17,7 +17,7 @@ library(plyr)
 library(RColorBrewer)
 
 # Répertoire de travail
-setwd("c:/r/projets/Cours_Bioregionalisation/")
+setwd("d:/r/projects/Cours_Bioregionalisation/")
 
 # Shapefiles
 basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
@@ -67,89 +67,100 @@ count(fish.sites1$lvl1)
 count(fish.species1$lvl1)
 ```
 
-On observe les 15 clusters du niveau 1 sont hétérogènes. Certains clusters contiennentt beaucoup de bassins et sont très riches, tandis que d'autres ont peu de bassins et sont peu riches. S'agissant d'étudier les grandes régions biogéographiques, nous allons limiter notre analyse aux clusters qui ont beaucoup de bassins et beaucoup d'espèces. Les 6 premiers clusters ont plus de 50 bassins versants et plus de 200 espèces, donc nous travaillerons avec ces 6 clusters ici, mais vous pouvez choisir un chiffre différent (et vos résultats peuvent différer - MapEquation fonctionne sur un processus aléatoire donc il faut faire des répétitions, [cf. tutorial en ligne](https://github.com/Farewe/biogeonetworks)).
+On observe que les 15 clusters du niveau 1 sont hétérogènes. Certains clusters contiennent beaucoup de bassins et sont très riches, tandis que d'autres ont peu de bassins et sont peu riches. S'agissant d'étudier les grandes régions biogéographiques, nous allons limiter notre analyse aux clusters qui ont beaucoup de bassins et beaucoup d'espèces. Les 6 premiers clusters ont plus de 50 bassins versants et plus de 200 espèces, donc nous travaillerons avec ces 6 clusters ici, mais vous pouvez choisir un chiffre différent (et vos résultats peuvent différer - MapEquation fonctionne sur un processus aléatoire donc il faut faire des répétitions, [cf. tutorial en ligne](https://github.com/Farewe/biogeonetworks)).
+
+Le chiffre que vous choisirez n'a pas beaucoup d'impact à ce stade car il va servir aux couleurs sur les cartes (les clusters principaux seront colorés, tandis que les clusters secondaires seront en gris dans notre exemple).
 
 # 6. Attribuer des couleurs aux grandes régions
 
-Attribuez des couleurs en vous limitant au nombre identifié à l’étape 5. 
 
-Fonction `attributeColors`, en précisant le nombre maximum de régions avec l’argument `nb.max.colors` et la base de données avec `db`. Lancez cette commande une première fois sur le réseau (issu de `readInfomapTree`), puis une seconde fois sur la table des bassins (issue de `getSiteTable`). Cela permettra d’avoir les bonnes couleurs à la fois sur le réseau complet (pour l’étape 8) et sur les bassins (pour la carte étape 7).
-
-# 7. Affichez la carte des bassins avec les couleurs des régions
-
-Pour cela, il faudra ajouter une colonne contenant les couleurs au data.frame de l’objet spatial. Attention !! Les couleurs doivent être dans le bon ordre !! Pour cela il faut faire la correspondance entre les noms des bassins dans l’objet spatial et les noms dans la table des bassins, avec la commande `match`.
-
-
-Ci-dessous un exemple de code, où on veut associer la colonne "Color" de tableau1 dans tableau2, tout en s'assurant que l'on ne mélange pas les sites (colonne Name).
-
-**tableau1**
-
-| Name          | Color         | 
-| ------------- |:-------------:| 
-| 1             | Red           | 
-| 2             | Green         |
-| 3             | Blue          |
-| 4             | Green         |
-
-
-**tableau2**
-
-| Name          | Richness      | 
-| ------------- |:-------------:| 
-| 2             | 31            | 
-| 1             | 42            |
-| 4             | 35            |
-| 3             | 21            |
-
-
-```{r eval=FALSE}
-tableau2$Color <- tableau1$Color[match(tableau2$Basin, tableau1$Name)]
+```{r}
+fish.net1 <- attributeColors(fish.net1, nb.max.colors = 6, db = fishdb1)
+fish.sites1 <- attributeColors(fish.sites1, nb.max.colors = 6, db = fishdb1)
 ```
 
 
-**tableau2**
+# 7. Affichez la carte des bassins avec les couleurs des régions
 
-| Name          | Richness      | Color    |
-| ------------- |:-------------:|:--------:|
-| 2             | 31            | Green    |
-| 1             | 42            | Red      |
-| 4             | 35            | Green    |
-| 3             | 21            | Blue     |
-
-Une fois que vous avez ajouté les couleurs dans la table attributaire des bassins, faites la carte, sans oublier de préciser l'argument `col` de la fonction `plot` pour avoir les couleurs.
+```{r}
+basins@data$color1 <- fish.net1$color[match(basins@data$BASIN, fish.net1$Name)]
+plot(basins, col = basins@data$color1)
+```
 
 
 # 8. Ecrire le réseau biogéographique pour Gephi
 
 
-Ecrivez le réseau biogéographique avec les clusters et couleurs sur le disque dur dans un format lisible par Gephi (format .gdf). 
+```{r}
+writeGDF(fishdb1, fish.net1, site.field = "Basin", species.field = "Species", color.field = "color",
+         filename = "./data/fishnet1.gdf")
+```
 
-Fonction `writeGDF`. Nécessite la base de données et le réseau. Précisez les noms des colonnes des colonnes correspondant aux sites et aux espèces dans la base de données. Précisez le nom de la colonne correspond à la couleur dans votre réseau. Donnez le nom de fichier sous lequel sera enregistré votre réseau (extension .gdf).
 
 
 # 9. Analysez le réseau biogéographique sous gephi
 
-Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre réseau avec l’algorithme force atlas 2. Ajustez la taille de vos noeuds selon leur « degré » (*Aspect* > *Noeuds* > *Ranking* > liste déroulante : *degré* - essayer différentes gammes de valeurs). Affichez les noms des noeuds et ajuster la taille des noms selon la même méthode. Exportez votre graphe dans la fenêtre « *Prévisualisation* » en jouant avec les options.
-
-![](img/gephi.png)
-
-
-
 # 10. Refaites l'analyse pour la seconde base de données
 
-Répétez les étapes 2-9 pour la base de données fishdb2 et comparez les graphes et les cartes.
+```{r}
+writePajek(fishdb2, 
+           site.field = "Basin",
+           species.field = "Species",
+           filename = "./data/fishdb2.net")
+
+system("./infomap --undirected --tree --map ./data/fishdb2.net ./data/")
+
+fish.net2 <- readInfomapTree("./data/fishdb2.tree")
+
+
+fish.sites2 <- getSiteTable(fishdb2, site.field = "Basin", network = fish.net2)
+fish.species2 <- getSpeciesTable(fishdb2, species.field = "Species", network = fish.net2)
+
+head(fish.sites2)
+count(fish.sites2$lvl1)
+count(fish.species2$lvl1)
+
+fish.net2 <- attributeColors(fish.net2, nb.max.colors = 6, db = fishdb2)
+fish.sites2 <- attributeColors(fish.sites2, nb.max.colors = 6, db = fishdb2)
+
+basins@data$color2 <- fish.net2$color[match(basins@data$BASIN, fish.net2$Name)]
+
+op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
+plot(basins, col = basins@data$color1)
+plot(basins, col = basins@data$color2)
+par(op)
+
+writeGDF(fishdb2, fish.net2, site.field = "Basin", species.field = "Species", color.field = "color",
+         filename = "./data/fishnet2.gdf")
+```
+
 
 **Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
 
+La différence est due au fait que la base fishdb2 intègre les occurrences d'introduction par l'homme des poissons d'eau douce, ce qui masque les patrons naturels et change la forme des régions biogéographiques de poissons d'eau douce.
+
 # 11. (facultatif) Calculez le coefficient de participation.
 
-Utilisez la fonction `partic.coef`.
-
 ```{r eval=FALSE}
-objet.sortie <- partic.coef(<arbre map equation>, 
-                         db = fishdb1, site.field = "Basin",
-                         species.field = "Species",
-                         cluster.field = "lvl1")
+fish.net1 <- participationCoefficient(fish.net1, 
+                                      db = fishdb1, site.field = "Basin",
+                                      species.field = "Species",
+                                      lvl = "lvl1")
+fish.net2 <- participationCoefficient(fish.net2, 
+                                      db = fishdb2, site.field = "Basin",
+                                      species.field = "Species",
+                                      lvl = "lvl1")
+rbPal <- colorRampPalette(c('blue','red'))
+fish.net1$pcCol <- rbPal(10)[as.numeric(cut(fish.net1$participation.coef, breaks = 10))]
+basins@data$pcCol1 <- fish.net1$pcCol[match(basins@data$BASIN, fish.net1$Name)]
+fish.net2$pcCol <- rbPal(10)[as.numeric(cut(fish.net2$participation.coef, breaks = 10))]
+basins@data$pcCol2 <- fish.net2$pcCol[match(basins@data$BASIN, fish.net2$Name)]
+
+op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
+plot(basins, col = basins@data$pcCol1)
+plot(basins, col = basins@data$pcCol2)
+par(op)
+
 ```
 
 
@@ -157,4 +168,46 @@ Ajoutez le coefficient de participation à votre table attributaire des bassins,
 
 # 12. (facultatif) Faites une belle carte :) 
 
-Essayez de changer la projection, d'ajouter un graticule...
+```{r}
+library(sf)
+library(lwgeom)
+library(ggplot2)
+library(rnaturalearth)
+
+# On va utiliser la projection du National Geographic: Winkel Tripel
+# Pour cela il faut utiliser le package lwgeom qui permet des projections additionnelles avec sf
+
+# Graticule
+gr <- sf::st_graticule(lat = c(-89.9,seq(-80,80,20), 89.9))
+# Projection du graticule en wintri
+gr <- st_transform_proj(gr, 
+                        crs = "+proj=wintri")
+
+# Trait de cote
+wm <- ne_coastline(scale = 50, returnclass = "sf")
+# Projection
+wm <- st_transform_proj(wm, 
+                        crs = "+proj=wintri")
+
+
+# Transformation des bassins en objet sf
+basinsf <- st_as_sf(basins)
+# Projection des bassins en wintri
+basinsf <- st_transform_proj(basinsf, 
+                             crs = "+proj=wintri")
+
+# RICHNESS NATIVE
+ggplot() +
+  geom_sf(data = gr, color = 'grey', # graticule
+          size = .5) +
+  geom_sf(data = wm, col = grey(.6), fill = grey(.9), # continents
+          size = .2) +
+  geom_sf(data = basinsf, aes(fill = color1), # bassins avec couleurs des régions
+          size = .05) +
+  theme_minimal() + # thème simplifié pour ggplot2
+  coord_sf(datum = NA) + # obligatoire pour pouvoir utiliser les projections de lwgeom
+  scale_fill_identity()  # pour que ggplot utilise bien les couleurs qu'on lui demande
+
+```
+
+
