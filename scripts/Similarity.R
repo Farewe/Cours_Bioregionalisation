@@ -2,12 +2,17 @@
 library(betapart)
 library(recluster)
 library(dendextend)
+library(vegan)
+library(rworldmap)
 
-
-
+wm <- getMap(resolution = "low")
 
 # Occurrence databases
 subtidaldb <- readRDS("./data/invertebres_benthiques.RDS")
+
+
+# Site position
+sites <- readRDS("./data/sites_invertebresbenthiques.RDS")
 
 #### Base 1 ####
 # 1.
@@ -15,65 +20,73 @@ subtidaldb <- readRDS("./data/invertebres_benthiques.RDS")
 
 
 # 2.
-dist.subtidal <- beta.pair(subtidaldb, 
+dist.subtidal <- beta.pair(t(subtidaldb), 
                         index.family ="sorensen")
 
 
 # 3.
-fish.nmds1 <- metaMDS(dist.fish1$beta.sim, center=TRUE)
+subtidal.nmds <- metaMDS(dist.subtidal$beta.sim, center=TRUE)
 
-col.fish1 <- recluster.col(fish.nmds1$points)
+col.subtidal <- recluster.col(subtidal.nmds$points)
 
-colnames(col.fish1) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
+colnames(col.subtidal) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
 
-basins@data <- data.frame(basins@data, 
-                          col.fish1[match(basins@data$BASIN,
-                                          rownames(col.fish1)), ])
+sites <- data.frame(sites, 
+                    col.subtidal[match(sites$station_id,
+                                       rownames(col.subtidal)), ])
 
 
 op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
-recluster.plot.col(col.fish1[1:fish.nmds1$nobj, ])
+recluster.plot.col(col.subtidal[1:subtidal.nmds$nobj, ])
 
-plot(basins, col = rgb(red = basins@data$nmdsred,
-                       green = basins@data$nmdsgreen,
-                       blue = basins@data$nmdsblue,
-                       maxColorValue = 255))
+plot(sites$X1 ~ sites$Y1,
+     col = rgb(red = sites$nmdsred,
+               green = sites$nmdsgreen,
+               blue = sites$nmdsblue,
+               maxColorValue = 255))
+plot(wm, add = TRUE)
 
 par(op)
 
 
 
 # 4.
-tree.fish1 <- recluster.cons(dist.fish1$beta.sim, tr = 100)
-plot(tree.fish1$cons,
-     tip.color = rgb(red = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 3],
-                     green = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 4],
-                     blue = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 5],
+tree.subtidal <- recluster.cons(dist.subtidal$beta.sim, tr = 100)
+plot(chosen.tree,
+     tip.color = rgb(red = col.subtidal[match(chosen.tree$tip.label, rownames(col.subtidal)), 3],
+                     green = col.subtidal[match(chosen.tree$tip.label, rownames(col.subtidal)), 4],
+                     blue = col.subtidal[match(chosen.tree$tip.label, rownames(col.subtidal)), 5],
                      maxColorValue = 255))
 
+
+
+tree.subtidal <- modified.recluster.cons(dist.subtidal$beta.sim, tr = 100)
+
 # 5.
-coph.fish1 <- as.matrix(cophenetic(as.hclust(tree.fish1$cons)))
+coph.subtidal <- as.matrix(cophenetic(as.hclust(tree.subtidal$cons)))
 # Pour corriger l'ordre des sites
-coph.fish1 <- coph.fish1[match(attr(dist.fish1$beta.sim, "Labels"), 
-                               rownames(coph.fish1)),
-                         match(attr(dist.fish1$beta.sim, "Labels"), 
-                               colnames(coph.fish1))]
-dist.fish1.matrix <- as.matrix(dist.fish1$beta.sim)
+coph.subtidal <- coph.subtidal[match(attr(dist.subtidal$beta.sim, "Labels"), 
+                                     rownames(coph.subtidal)),
+                               match(attr(dist.subtidal$beta.sim, "Labels"), 
+                                     colnames(coph.subtidal))]
+dist.subtidal.matrix <- as.matrix(dist.subtidal$beta.sim)
 
-cor(dist.fish1.matrix[lower.tri(dist.fish1.matrix)],
-    coph.fish1[lower.tri(coph.fish1)])
+cor(dist.subtidal.matrix[lower.tri(dist.subtidal.matrix)],
+    coph.subtidal[lower.tri(coph.subtidal)])
 
+chosen.tree <- tree.subtidal$trees[[56]]
 
 # 6.
-fish.cut1 <- recluster.expl.diss(tree.fish1$cons, dist.fish1$beta.sim, maxcl = 50)
+# Méthode de Holt et al. 2013
+cut.subtidal <- recluster.expl.diss(tree.subtidal$cons, dist.subtidal$beta.sim, maxcl = 50)
 
-plot(fish.cut1$expl.div ~ fish.cut1$nclust, type = "l", lwd = 2, ylim = c(0, 1),
+plot(cut.subtidal$expl.div ~ cut.subtidal$nclust, type = "l", lwd = 2, ylim = c(0, 1),
      bty = "l", xlab = "Nombre de clusters", ylab = "% de dissimilarité", las = 1)
 abline(h = 0.9, lty = 3)
 abline(h = 0.95, lty = 3)
 abline(h = 0.99, lty = 3)
 abline(h = 0.999, lty = 3)
-nclust1 <- fish.cut1$nclust[which(fish.cut1$expl.div > 0.9)][1]
+nclust1 <- cut.subtidal$nclust[which(cut.subtidal$expl.div > 0.9)][1]
 abline(v = nclust1, lty = 2)
 
 
@@ -82,108 +95,32 @@ h <- 1
 while(k < nclust1)
 {
   h <- h - .01
-  clusters.fish1 <- cutree(tree.fish1$cons, h = h)
-  k <- max(clusters.fish1)
+  clusters.subtidal <- cutree(tree.subtidal$cons, h = h)
+  k <- max(clusters.subtidal)
 }
 
 h
 
 # Attention à remettre les noms dans l’ordre alphabétique pour l’étape 7 (car la NMDS a les noms dans l’ordre alphabétique)
-clusters.fish1 <- clusters.fish1[order(names(clusters.fish1))]
+clusters.subtidal <- clusters.subtidal[order(names(clusters.subtidal))]
 
 
 # 7.
-groupcol.fish1 <- recluster.group.col(col.fish1[1:fish.nmds1$nobj, ], 
-                                      clusters.fish1)$all
+groupcol.subtidal <- recluster.group.col(col.subtidal[1:subtidal.nmds$nobj, ], 
+                                      clusters.subtidal)$all
 
 # 8.
-basins@data$cluster[match(names(clusters.fish1), basins@data$BASIN)] <- clusters.fish1
-basins@data[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  
-  groupcol.fish1[match(basins@data$BASIN, rownames(groupcol.fish1)), ]
+sites$cluster[match(names(clusters.subtidal), sites$station_id)] <- clusters.subtidal
+sites[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  
+  groupcol.subtidal[match(sites$station_id, rownames(groupcol.subtidal)), ]
 
-plot(basins, col = rgb(red = basins@data$r1,
-                       green = basins@data$g1,
-                       blue = basins@data$b1,
+plot(sites$Y1 ~ sites$X1, col = rgb(red = sites$r1,
+                       green = sites$g1,
+                       blue = sites$b1,
                        maxColorValue = 255))
 
 
-#### Base 2 ####
-# 9.
-fishdb2 <- as.matrix(table(fishdb2$Basin, fishdb2$Species))
-fishdb2 <- fishdb2[rownames(fishdb2) %in% rownames(fishdb1), ] 
 
-# Distance matrix
-dist.fish2 <- beta.pair(fishdb2, 
-                        index.family ="sorensen")
-
-
-# NMDS
-fish.nmds2 <- metaMDS(dist.fish2$beta.sim, center=TRUE)
-
-col.fish2 <- recluster.col(fish.nmds2$points)
-colnames(col.fish2) <- c("nmdsx2", "nmdsy2", "nmdsred2", "nmdsgreen2", "nmdsblue2")
-
-basins@data <- data.frame(basins@data, 
-                          col.fish2[match(basins@data$BASIN,
-                                          rownames(col.fish2)), ])
-
-
-op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
-recluster.plot.col(col.fish2[1:fish.nmds2$nobj, ])
-
-plot(basins, col = rgb(red = basins@data$nmdsred2,
-                       green = basins@data$nmdsgreen2,
-                       blue = basins@data$nmdsblue2,
-                       maxColorValue = 255))
-
-par(op)
-
-
-# Consensus tree
-tree.fish2 <- recluster.cons(dist.fish2$beta.sim, p = 0.5)
-
-op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
-plot(tree.fish1$cons,
-     tip.color = rgb(red = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 3],
-                     green = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 4],
-                     blue = col.fish1[match(tree.fish1$cons$tip.label, rownames(col.fish1)), 5],
-                     maxColorValue = 255))
-
-plot(tree.fish2$cons,
-     tip.color = rgb(red = col.fish2[match(tree.fish2$cons$tip.label, rownames(col.fish2)), 3],
-                     green = col.fish2[match(tree.fish2$cons$tip.label, rownames(col.fish2)), 4],
-                     blue = col.fish2[match(tree.fish2$cons$tip.label, rownames(col.fish2)), 5],
-                     maxColorValue = 255))
-par(op)
-
-
-
-# Cut tree at the same height as before
-clusters.fish2 <- cutree(tree.fish2$cons, h = h)
-# Attention à remettre les noms dans l'ordre alphabétique :
-clusters.fish2 <- clusters.fish2[order(names(clusters.fish2))]
-
-
-groupcol.fish2 <- recluster.group.col(col.fish2[1:fish.nmds2$nobj, ], 
-                                      clusters.fish2)$all
-
-basins@data$cluster2[match(names(clusters.fish2), basins@data$BASIN)] <- clusters.fish2
-basins@data[, c("nmdsx2", "nmdsy2", "r2", "g2", "b2")] <-  groupcol.fish2[match(basins@data$BASIN, rownames(groupcol.fish2)), ]
-
-
-
-op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
-plot(basins, col = rgb(red = basins@data$r1,
-                       green = basins@data$g1,
-                       blue = basins@data$b1,
-                       maxColorValue = 255))
-
-plot(basins, col = rgb(red = basins@data$r2,
-                       green = basins@data$g2,
-                       blue = basins@data$b2,
-                       maxColorValue = 255))
-
-par(op)
 
 
 

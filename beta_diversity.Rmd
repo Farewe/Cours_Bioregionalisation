@@ -22,7 +22,7 @@ Ces données sont issues [d'un travail publié sur la conservation des communaut
 # Chargez les packages
 
 
-Pour ce TP vous avez besoin de trois packages : `betapart` (calcul de diversité beta), `recluster` (fonctions de clusterisation) et `dendextend` (fonctions utiles pour la manipulation de dendrogrammes).
+Pour ce TP vous avez besoin de trois packages : `betapart` (calcul de diversité beta), `recluster` (fonctions de clusterisation), `dendextend` (fonctions utiles pour la manipulation de dendrogrammes) et `vegan` (NMDS).
 
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
