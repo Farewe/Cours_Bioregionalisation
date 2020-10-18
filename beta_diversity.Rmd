@@ -1,5 +1,5 @@
 ---
-  title: "UE BIME - TP bioregionalisation avec les réseaux"
+title: "UE BIME - TP bioregionalisation avec les réseaux"
 author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
 output: html_document
 editor_options: 
@@ -8,7 +8,7 @@ editor_options:
   
 # Introduction
   
-Nous allons ici suivre le cadre méthodologique de Kreft & Jetz 2010 (J. Biogeogr.) pour analyser la diversité beta et rechercher des ensembles biogéographiques. Les sections du TP suivent ce cadre :
+Nous allons ici suivre le cadre méthodologique de Kreft & Jetz 2010 (J. Biogeogr.) pour analyser la diversité beta et rechercher des ensembles biogéographiques. Le TP suit donc globalement ce cadre :
 
 ![](img/beta framework.png)
 
@@ -22,138 +22,153 @@ Ces données sont issues [d'un travail publié sur la conservation des communaut
 # Chargez les packages
 
 
-Pour ce TP vous avez besoin de trois packages : `betapart` (calcul de diversité beta), `recluster` (fonctions de clusterisation), `dendextend` (fonctions utiles pour la manipulation de dendrogrammes) et `vegan` (NMDS).
+Pour ce TP vous avez besoin de cinq packages : `betapart` (calcul de diversité beta), `recluster` (fonctions de clusterisation), `dendextend` (fonctions utiles pour la manipulation de dendrogrammes), `vegan` (NMDS) et `rnaturalearth` (fond de carte).
 
-# 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
+# 1. Chargement des données
 
-Utilisez les fonctions `load` et `readOGR` (package sp)
+Chargez la matrice de présence-absence et la localisation des sites en utilisant la commande `readRDS`.
 
-
-# 2. Créer le réseau biogéographique
-
-Créez le réseau biogéographique à partir de `fishdb1` écrivez le sur le disque dur dans un format lisible (format PAJEK) par map equation.
-
-Utilisez la fonction writePajek : fournir la base de données, et les noms des colonnes correspondant aux espèces et aux sites, et le nom du fichier pajek (extension .net). Taper ?writePajek pour connaître les arguments. 
-
-# 3. Appliquer l'algorithme de clusterisation
-
-Rechercher les régions avec Map Equation, en précisant comme options que le réseau est non dirigé (--undirected) et que vous voulez les résultats sous forme d’arbre (--tree).  Map Equation se lance en ligne de commande ; il est possible de le lancer depuis R avec la fonction `system()`.
+Si vous le souhaitez, calculez la richesse spécifique et supprimez les sites à faible richesse spécifique de la base de données.
 
 
+# 2. Calcul des distances entre bassins avec l’indice ßsim [3]
 
+$$ \beta_{sim}= 1 - \frac{a}{min(b,c)+a}$$
+
+où a = nombre d'espèces partagées entre les deux sites; b et c = nombre d'espèces uniques à chacun des deux sites
+
+Fonction `beta.pair` dans le package betapart
+
+# 3. Visualisation des distances entres sites
+
+Faites une ordination NMDS pour représenter graphiquement les distances entre les sites, et affichez de la carte colorée des distances entre bassins.
+
+Fonctions `metaMDS`, `recluster.col` et `recluster.plot.col` dans le package `recluster`
+
+
+Pour faire la carte il faudra colorer les sites avec les bonnes couleurs. On va utiliser la même technique que dans le premier TP (le match !).
+
+Il faudra ajouter tout le tableau issu de recluster.col (dans mon exemple ci-dessous je l’ai appelé col.subtidal) dans le tableau qui contient la localisation des sites, car les couleurs sont réparties sur plusieurs colonnes en tant que valeurs rouge, vert et bleu (colonnes 3, 4 et 5 – voir la section Value de l’aide de recluster).
+
+Pour ne pas s’y perdre, attribuez des noms aux colonnes de `col.subtidal`, par exemple :
+`colnames(col.subtidal) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")`
+
+Pour cela, le plus simple est d’utiliser la commande data.frame qui permettra d’ajouter plusieurs colonnes :
+```{r eval=FALSE}
+sites <- data.frame(sites, 
+                    col.subtidal[match(             ,
+                                       ), ])
+```
+Je vous laisse écrire le contenu de `match(    )`.
+
+Ensuite, pour afficher la carte, il faudra spécifier les couleurs en indiquant les bonnes colonnes dans : 
+```{r eval=FALSE}
+plot(sites, col = rgb(red =   ,
+                      green =   ,
+                      blue =   ,
+                      maxColorValue = 255))
+
+# Ajoutez les contours (grossiers) de la Bretagne avec le package rnaturalearth
+library(rnaturalearth)
+wm <- ne_coastline(scale = 50, returnclass = "sp")
+
+plot(wm, add = TRUE)
+```
+
+Qu'observez-vous sur la NMDS et sur la carte ? Comment est distribuée la diversité beta ? Semble-t-il y avoir un effet spatial ou pas ? Cet effet est-il le seul ? 
+
+
+# 4. Faire la classification ascendante hiérarchique 
+
+Réaliser une classification ascendante hiérarchique avec la méthode UPGMA [6]. Etant donné que l’ordre des sites influence la classification, il faut faire un arbre consensus en rééchantillonnant de nombreuses fois les noms des sites aléatoirement. 
+Pour cela, il faut normalement utiliser la fonction `recluster.cons` du package `recluster`. Cependant, comme vous aurez l'occasion de le voir, cette fonction va créer un arbre consensus dont la corrélation cophénétique n'est pas forcément bonne et dont la topologie est très difficile à exploiter. J'ai donc créé une version alternative de la fonction `recluster.cons` qui calculera la distance cophénétique pour chaque sous-arbre et permettra de sélectionner l'arbre ou les arbres pour lesquels la corrélation cophénétique est maximale.
+
+Pour charger la fonction modifiée, installez le package `devtools` puis utilisez :
 
 ```{r eval=FALSE}
-# Structure de la commande :
-# <chemin vers infomap> <arguments d'infomap> <chemin vers le fichier du réseau biogéographique> <chemin vers le dossier de sortie>
-# exemple :
-# "c:/r/infomap        --undirected --tree    c:/r/data/fishdb1.net                          c:/r/data"
-
-system("./infomap --undirected –-tree ./data/fishdb1.net ./data/")
+devtools::source_url("https://raw.githubusercontent.com/Farewe/Cours_Bioregionalisation/master/scripts/modified_recluster_tree_function.R")
 ```
 
-
-![](img/ME.png)
-
-
-# 4. Lire l'arbre et les clusters créés par Map Equation sous R
-
-Fonction `readInfomapTree`
+Cela charge la fonction appelée `modified.recluster.cons` en mémoire, et celle-ci fonctionne exactement comme `recluster.cons`. Utilisez donc `modified.recluster.cons` sur votre matrice de distance pour faire la classification ascendante hiérarchique.
 
 
-# 5. Analyser séparément les sites et les espèces
+# 5. Evaluer la qualité de la classification consensus
 
-Récupérez les tableaux indiquant quel bassin est associé à quelle région, et quelle espèce est associée à quelle région. Inspectez ces tableaux, et regardez le nombre de bassins / espèces dans chaque grande région (niveau 1, « lvl1 »). Déduisez-en le nombre de régions à garder.
+Pour cela, vous allez analyser la corrélation entre distance cophénétique et dissimilarité entre sites
+Fonctions cophenetic et cor dans le package stats. Cette étape est plus compliquée qu’elle n’en a l’air, car il faut contrôler l’ordre des noms et gérer les différents formats de fichier.
+Voici un script qui fonctionne :
+```{r eval=FALSE}
+# On récupère les distances cophénétiques de l'arbre consensus, on les met en format matrix
+coph.subtidal <- as.matrix(cophenetic(as.hclust(tree.subtidal$cons)))
 
-Fonction `getSiteTable` et `getSpeciesTable`. Ces deux fonctions nécessitent à la fois la base `fishdb1` et l’arbre créé par Map equation. N’oubliez pas de préciser les noms de colonnes correspondant aux espèces ou aux bassins. 
+# On fait en sorte que l'ordre des sites soit identique entre la matrice de distance initiale (dist.subtidal$beta.sim) et la matrice de distance cophénétique grâce à la commande match
+coph.subtidal <- coph.subtidal[match(attr(dist.subtidal$beta.sim, "Labels"), 
+                                     rownames(coph.subtidal)),
+                               match(attr(dist.subtidal$beta.sim, "Labels"), 
+                                     colnames(coph.subtidal))]
+# On transforme la "matrice de distance" (= format "dist") initiale en matrice (= format "matrix"), pour pouvoir calculer la corrélation sur deux objets identiques
+dist.subtidal.matrix <- as.matrix(dist.subtidal$beta.sim)
 
-Pour inspecter le nombre de bassins ou d’espèces par niveau utilisez la fonction `count` du package `plyr` (permet de compter le nombre de répétitions d’un facteur).
-
-# 6. Attribuer des couleurs aux grandes régions
-
-Attribuez des couleurs en vous limitant au nombre identifié à l’étape 5. 
-
-Fonction `attributeColors`, en précisant le nombre maximum de régions avec l’argument `nb.max.colors` et la base de données avec `db`. Lancez cette commande une première fois sur le réseau (issu de `readInfomapTree`), puis une seconde fois sur la table des bassins (issue de `getSiteTable`). Cela permettra d’avoir les bonnes couleurs à la fois sur le réseau complet (pour l’étape 8) et sur les bassins (pour la carte étape 7).
-
-# 7. Affichez la carte des bassins avec les couleurs des régions
-
-Pour cela, il faudra ajouter une colonne contenant les couleurs au data.frame de l’objet spatial. Attention !! Les couleurs doivent être dans le bon ordre !! Pour cela il faut faire la correspondance entre les noms des bassins dans l’objet spatial et les noms dans la table des bassins, avec la commande `match`.
-
-
-Ci-dessous un exemple de code, où on veut associer la colonne "Color" de tableau1 dans tableau2, tout en s'assurant que l'on ne mélange pas les sites (colonne Name).
-
-**tableau1**
-  
-  | Name          | Color         | 
-  | ------------- |:-------------:| 
-  | 1             | Red           | 
-  | 2             | Green         |
-  | 3             | Blue          |
-  | 4             | Green         |
-  
-  
-  **tableau2**
-  
-  | Name          | Richness      | 
-  | ------------- |:-------------:| 
-  | 2             | 31            | 
-  | 1             | 42            |
-  | 4             | 35            |
-  | 3             | 21            |
-  
-  
-  ```{r eval=FALSE}
-tableau2$Color <- tableau1$Color[match(tableau2$Basin, tableau1$Name)]
+# On calcule la corrélation entre les deux matrices, mais uniquement sur le triangle inférieur pour éviter de doubler artificiellement le nombre d'observations
+cor(dist.subtidal.matrix[lower.tri(dist.subtidal.matrix)],
+    coph.subtidal[lower.tri(coph.subtidal)])
 ```
 
+Comparez la valeur de corrélation cophénétique de l'arbre consensus aux valeurs de corrélation cophénétiques de tous les arbres individuels. Que remarquez-vous ? 
 
-**tableau2**
-  
-  | Name          | Richness      | Color    |
-  | ------------- |:-------------:|:--------:|
-  | 2             | 31            | Green    |
-  | 1             | 42            | Red      |
-  | 4             | 35            | Green    |
-  | 3             | 21            | Blue     |
-  
-  Une fois que vous avez ajouté les couleurs dans la table attributaire des bassins, faites la carte, sans oublier de préciser l'argument `col` de la fonction `plot` pour avoir les couleurs.
+Choisissez de continuer votre analyse soit sur l'arbre consensus, soit sur l'un des arbres individuels en utilisant votre analyse de la corrélation cophénétique. Stockez l'arbre retenu dans un objet appelé `chosen.tree` sur lequel vous effectuerez toutes les manipulations suivantes.
+
+Affichez votre arbre avec `plot`
+
+*Rappel* Pour extraire un élément d'une liste, on utilise les doubles crochets, par exemple `tree.subtidal$trees[[31]]`.
 
 
-# 8. Ecrire le réseau biogéographique pour Gephi
+# 6. Rechercher la hauteur à laquelle couper l'arbre
 
+Essayez la méthode de Holt et al. 2013, qui consiste à comparer la "dissimilarité expliquée par les clusters" (= somme des dissimilarités entre sites qui appartiennent à des clusters différents) à la dissimilarité totale (= somme des dissimilarités de la matrice de distance initiale). Par exemple, si vous choisissez de couper l'arbre pour avoir 2 clusters, dans ce cas la "dissimilarité expliquée par les clusters" consiste à faire la somme de la dissimilarité entre sites qui appartiennent à des clusters différents. Si deux sites appartiennent au même cluster, leur distance ne sera pas comptabilisée dans la somme de "dissimilarité expliquée par les clusters". 
 
-Ecrivez le réseau biogéographique avec les clusters et couleurs sur le disque dur dans un format lisible par Gephi (format .gdf). 
+Pour cela, utilisez la fonction `recluster.expl.diss` dans le package recluster en limitant le nombre maximum de clusters à 50.
 
-Fonction `writeGDF`. Nécessite la base de données et le réseau. Précisez les noms des colonnes des colonnes correspondant aux sites et aux espèces dans la base de données. Précisez le nom de la colonne correspond à la couleur dans votre réseau. Donnez le nom de fichier sous lequel sera enregistré votre réseau (extension .gdf).
+Dans l'objet que vous obtiendrez, recherchez le nombre de clusters qui correspond à une dissimilarité totale expliquée d'au moins 90% (= seuil minimum de Holt et al. 2013). Vous pouvez aussi faire un graphique du % de dissimilarité expliquée en fonction du nombre de clusters.
 
-
-# 9. Analysez le réseau biogéographique sous gephi
-
-Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre réseau avec l’algorithme force atlas 2. Ajustez la taille de vos noeuds selon leur « degré » (*Aspect* > *Noeuds* > *Ranking* > liste déroulante : *degré* - essayer différentes gammes de valeurs). Affichez les noms des noeuds et ajuster la taille des noms selon la même méthode. Exportez votre graphe dans la fenêtre « *Prévisualisation* » en jouant avec les options.
-
-![](img/gephi.png)
-
-
-
-# 10. Refaites l'analyse pour la seconde base de données
-
-Répétez les étapes 2-9 pour la base de données fishdb2 et comparez les graphes et les cartes.
-
-**Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
-
-# 11. (facultatif) Calculez le coefficient de participation.
-
-Utilisez la fonction `partic.coef`.
+Une fois que vous avez le nombre "optimal" de clusters au seuil de 90%, il peut être utile de savoir à quelle hauteur de coupe de l'arbre ce nombre correspond. Voici une boucle `while` qui permet de le faire : 
 
 ```{r eval=FALSE}
-objet.sortie <- partic.coef(<arbre map equation>, 
-                         db = fishdb1, site.field = "Basin",
-                         species.field = "Species",
-                         cluster.field = "lvl1")
+k <- 0
+h <- 1
+while(k < nclust) # en supposant que votre nombre de clusters est stocké dans "nclust"
+{
+  h <- h - .01
+  clusters.subtidal <- cutree(chosen.tree, h = h) # chosen.tree est votre arbre
+  k <- max(clusters.subtidal)
+}
+# Attention à remettre les noms dans l’ordre alphabétique pour l’étape 7 (car la NMDS a les noms dans l’ordre alphabétique)
+clusters.subtidal <- clusters.subtidal[order(names(clusters.subtidal))]
 ```
 
+# 7. Attribuer des couleurs aux clusters en utilisant les axes de la NMDS
 
-Ajoutez le coefficient de participation à votre table attributaire des bassins, et visualisez le coefficient de participation.
+Utilisez la fonction `recluster.group.col` dans le package `recluster`.	Stockez ces couleurs dans un objet nommé `groupcol.subtidal`.
 
-# 12. (facultatif) Faites une belle carte :) 
 
-Essayez de changer la projection, d'ajouter un graticule...
+# 8. Affichez la carte des sites groupés par clusters
+
+Faites la carte des sites, en utilisant les couleurs de l'étape #7 pour illustrer les différents clusters.
+
+```{r eval=FALSE}
+# Attribution des clusters à la table des sites
+sites$cluster[match(names(clusters.subtidal), sites$station_id)] <- clusters.subtidal
+# Attribution des couleurs sur la base des axes de la nmds
+sites[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  
+  groupcol.subtidal[match(sites$station_id, rownames(groupcol.subtidal)), ]
+```
+
+Décrivez le résultat que vous obtenez : 
+
+- Semble-t-il y avoir différents clusters ?
+
+- Comment sont-ils distribués ? 
+
+- Est-ce que les sites sont assemblés en clusters en suivant un patron spatial évident ? 
+
+- Est-il possible que d'autres facteurs expliquent les clusters identifiés pour les sites ?

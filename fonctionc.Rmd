@@ -1,0 +1,203 @@
+---
+title: "UE BIME - TP bioregionalisation avec les réseaux"
+author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+# Chargez les packages
+
+
+```{r echo=FALSE}
+library(betapart)
+library(recluster)
+library(dendextend)
+library(vegan)
+library(rnaturalearth)
+```
+
+# 1. Chargement des données
+
+```{r}
+# Occurrence database
+subtidaldb <- readRDS("./data/invertebres_benthiques.RDS")
+
+
+# Site position
+sites <- readRDS("./data/sites_invertebresbenthiques.RDS")
+```
+
+# 2. Calcul des distances entre bassins avec l’indice ßsim [3]
+
+```{r}
+dist.subtidal <- beta.pair(t(subtidaldb), 
+                           index.family ="sorensen")
+```
+
+# 3. Visualisation des distances entres sites
+```{r fig.width=8, fig.height=8}
+subtidal.nmds <- metaMDS(dist.subtidal$beta.sim, center=TRUE)
+
+col.subtidal <- recluster.col(subtidal.nmds$points)
+
+colnames(col.subtidal) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
+
+sites <- data.frame(sites, 
+                    col.subtidal[match(sites$station_id,
+                                       rownames(col.subtidal)), ])
+
+
+op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
+recluster.plot.col(col.subtidal[1:subtidal.nmds$nobj, ])
+
+plot(x = sites$X, y = sites$Y,
+     col = rgb(red = sites$nmdsred,
+               green = sites$nmdsgreen,
+               blue = sites$nmdsblue,
+               maxColorValue = 255),
+     pch = 16, cex = .7)
+wm <- ne_coastline(scale = 50, returnclass = "sp")
+sp::plot(wm, add = TRUE)
+```
+
+Qu'observez-vous sur la NMDS et sur la carte ? Comment est distribuée la diversité beta ? Semble-t-il y avoir un effet spatial ou pas ? Cet effet est-il le seul ? 
+
+Il semble y avoir un gradient de dissimilarité entre les sites situés autour de la Bretagne. D'une manière générale, plus les sites sont proches spatialement, plus ils semblent similaires. Cependant il y a des exceptions, notamment dans la rade de Brest ou au niveau de Lannion, où des sites très proches semblent parfois être très dissimilaires, ce qui ne peut donc uniquement être expliqué par la proximité spatiale.
+
+Au niveau des couleurs, il apparait que certains sites éloignés spatialement peuvent être similaires (e.g. Ria d'Etel et rade de Brest). Il s'agit de sites partageant des conditions environnementales similaires (eaux turbides).
+
+# 4. Faire la classification ascendante hiérarchique 
+
+```{r}
+devtools::source_url("https://raw.githubusercontent.com/Farewe/Cours_Bioregionalisation/master/scripts/modified_recluster_tree_function.R")
+
+
+tree.subtidal <- modified.recluster.cons(dist.subtidal$beta.sim, tr = 100)
+```
+
+# 5. Evaluer la qualité de la classification consensus
+
+Pour cela, vous allez analyser la corrélation entre distance cophénétique et dissimilarité entre sites
+Fonctions cophenetic et cor dans le package stats. Cette étape est plus compliquée qu’elle n’en a l’air, car il faut contrôler l’ordre des noms et gérer les différents formats de fichier.
+Voici un script qui fonctionne :
+```{r}
+# On récupère les distances cophénétiques de l'arbre consensus, on les met en format matrix
+coph.subtidal <- as.matrix(cophenetic(as.hclust(tree.subtidal$cons)))
+
+# On fait en sorte que l'ordre des sites soit identique entre la matrice de distance initiale (dist.subtidal$beta.sim) et la matrice de distance cophénétique grâce à la commande match
+coph.subtidal <- coph.subtidal[match(attr(dist.subtidal$beta.sim, "Labels"), 
+rownames(coph.subtidal)),
+match(attr(dist.subtidal$beta.sim, "Labels"), 
+colnames(coph.subtidal))]
+# On transforme la "matrice de distance" (= format "dist") initiale en matrice (= format "matrix"), pour pouvoir calculer la corrélation sur deux objets identiques
+dist.subtidal.matrix <- as.matrix(dist.subtidal$beta.sim)
+
+# On calcule la corrélation entre les deux matrices, mais uniquement sur le triangle inférieur pour éviter de doubler artificiellement le nombre d'observations
+cor(dist.subtidal.matrix[lower.tri(dist.subtidal.matrix)],
+    coph.subtidal[lower.tri(coph.subtidal)])
+
+tree.subtidal$cophcor
+```
+
+La valeur de corrélation cophénétique de l'arbre consensus est faible par rapport à celles des arbres individuels. Ce n'est pas surprenant, car la topologie de l'arbre consensus indique qu'il n'arrive pas à identifier les relations entre sites, comme indiqué par la polytomie géante dessus (là où les sous-arbres sont tous embranchés au même niveau) :
+
+```{r fig.height=20, fig.width=8}
+plot(tree.subtidal$cons)
+```
+
+Nous allons donc utiliser le meilleur arbre individuel plutôt que l'arbre consensus. Cependant, nous retiendrons que la valeur de corrélation cophénétique reste faible (environ 0.62), ce qui indique que cet arbre ne représente que de manière approximative notre matrice de distance.
+
+```{r fig.height=20, fig.width=8}
+chosen.tree <- tree.subtidal$trees[[which(tree.subtidal$cophcor == max(tree.subtidal$cophcor))]] # Attention si vous avez plusieurs arbres avec la même valeur !
+
+# On va colorer les sites avec leur couleur sur la base de la NMDS
+plot(chosen.tree,
+     tip.color = rgb(red = col.subtidal[match(chosen.tree$tip.label, rownames(col.subtidal)), 3],
+                     green = col.subtidal[match(chosen.tree$tip.label, rownames(col.subtidal)), 4],
+                     blue = col.subtidal[match(chosen.tree$tip.label, rownames(col.subtidal)), 5],
+                     maxColorValue = 255))
+
+# On va également ajouter un axe pour voir la hauteur de l'arbre. C'est assez complexe car le package sous lequel l'arbre a été créé (phytools) est dédié aux analyses phylogénétiques, et est supposé indiquer les âges des lignées (le zéro est donc à gauche sur l'axe). En outre, il affiche l'arbre sur des valeurs divisés par deux. Voici du code qui permet de corriger ces défauts pour notre type d'analyse
+axis(1, 
+     at = seq(max(cophenetic(as.hclust(tree.subtidal$cons))), 0, 
+              by = -round(max(cophenetic(as.hclust(tree.subtidal$cons)))/4, 2)) / 2,
+     labels = seq(0, max(cophenetic(as.hclust(tree.subtidal$cons))), 
+                  by = round(max(cophenetic(as.hclust(tree.subtidal$cons)))/4, 2)))
+```
+
+# 6. Rechercher la hauteur à laquelle couper l'arbre
+
+```{r}
+cut.subtidal <- recluster.expl.diss(chosen.tree, dist.subtidal$beta.sim, maxcl = 50)
+
+plot(cut.subtidal$expl.div ~ cut.subtidal$nclust, type = "l", lwd = 2, ylim = c(0, 1),
+     bty = "l", xlab = "Nombre de clusters", ylab = "% de dissimilarité", las = 1)
+abline(h = 0.9, lty = 3)
+abline(h = 0.95, lty = 3)
+abline(h = 0.99, lty = 3)
+abline(h = 0.999, lty = 3)
+nclust <- cut.subtidal$nclust[which(cut.subtidal$expl.div > 0.9)][1]
+abline(v = nclust, lty = 2)
+
+
+k <- 0
+h <- 1
+while(k < nclust) # en supposant que votre nombre de clusters est stocké dans "nclust"
+{
+  h <- h - .01
+  clusters.subtidal <- cutree(chosen.tree, h = h) # chosen.tree est votre arbre
+  k <- max(clusters.subtidal)
+}
+
+
+h
+
+# Attention à remettre les noms dans l’ordre alphabétique pour l’étape 7 (car la NMDS a les noms dans l’ordre alphabétique)
+clusters.subtidal <- clusters.subtidal[order(names(clusters.subtidal))]
+```
+
+# 7. Attribuer des couleurs aux clusters en utilisant les axes de la NMDS
+
+```{r}
+groupcol.subtidal <- recluster.group.col(col.subtidal[1:subtidal.nmds$nobj, ], 
+                                         clusters.subtidal)$all
+```
+
+# 8. Affichez la carte des sites groupés par clusters
+
+Faites la carte des sites, en utilisant les couleurs de l'étape #7 pour illustrer les différents clusters.
+
+```{r}
+# Attribution des clusters à la table des sites
+sites$cluster[match(names(clusters.subtidal), sites$station_id)] <- clusters.subtidal
+# Attribution des couleurs sur la base des axes de la nmds
+sites[, c("nmdsx1", "nmdsy1", "r1", "g1", "b1")] <-  
+  groupcol.subtidal[match(sites$station_id, rownames(groupcol.subtidal)), ]
+
+plot(sites$Y ~ sites$X, col = rgb(red = sites$r1,
+                       green = sites$g1,
+                       blue = sites$b1,
+                       maxColorValue = 255),
+     pch = 16, cex = .7)
+sp::plot(wm, add = TRUE)
+```
+
+**Attention** Si tous vos clusters semblent "gris", c'est que vous avez mélangé l'ordre de vos sites à un moment de votre analyse, ce qui a mélangé les couleurs. Il est probable qu'un `match` n'ait pas fonctionné à un moment du code. Relancez bien toutes les lignes de code dans l'ordre.
+
+Décrivez le résultat que vous obtenez : 
+
+- Semble-t-il y avoir différents clusters ?
+
+On trouve différents clusters, même s'ils sont, au final, assez peu dissimilaires (cf. illustration de l'arbre à l'étape #5). Retenez que, la méthode de Holt (ou tout autre méthode similaire) vous donnera toujours des clusters. Ces clusters peuvent avoir un sens biologique, mais n'oubliez pas la hauteur à laquelle vous avez coupé l'arbre. Ici, la hauteur d'environ 0.25 indique que pour appartenir à des clusters différents, les sites ne doivent avoir en moyenne que 25% de dissimilarité. Ce seuile peut sembler faible, mais il s'agit d'une étude à l'échelle régionale, et donc il est cohérent qu'il soit faible comparé à des analyses à échelles plus larges où les faunes sont plus dissimilaires et donc où le seuil tournera à des valeurs bien élevées. 
+
+- Comment sont-ils distribués ? 
+
+Les sites proches sont généralement dans les mêmes clusters, tandis que les sites éloignés sont dans des clusters différents. Cependant, on note qu'il existe des sites parfois très proches qui peuvent appartenir à des clusters différents (rade de Brest, Ouessant, Lannion).
+
+- Est-ce que les sites sont assemblés en clusters en suivant un patron spatial évident ? 
+
+En général oui, avec des différences notables localement.
+
+- Est-il possible que d'autres facteurs expliquent les clusters identifiés pour les sites ?
+
+Oui, car des sites proches sont dans des clusters très différents. Une analyse des clusters en fonction des paramètres environnementaux permettrait de le démontrer. En l'occurrence, la turbidité, l'exposition des tombants, leur degré de perturbation peuvent expliquer l'appartenance à différents clusters.
