@@ -26,6 +26,8 @@ devtools::install_github("Farewe/biogeonetworks")
 
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
+[Téléchargez les données ici](https://github.com/Farewe/Cours_Bioregionalisation/raw/gh-pages/data/data_cours/data_cours.zip)
+
 Utilisez les fonctions `load` et `readOGR` (package sp)
 
 
