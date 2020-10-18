@@ -2,27 +2,20 @@
 library(betapart)
 library(recluster)
 library(dendextend)
-library(rgdal)
 
 
 
-
-# Shapefiles
-basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
 
 # Occurrence databases
-load("./data/data_cours/fishdb1.RData")
-load("./data/data_cours/fishdb2.RData")
-fishdb1 <- as.matrix(table(fishdb1$Basin, fishdb1$Species))
+subtidaldb <- readRDS("./data/invertebres_benthiques.RDS")
 
 #### Base 1 ####
 # 1.
-fishdb1 <- fishdb1[-which(rowSums(fishdb1) <= 20), ] # Retrait sites à faible richesse
-basins <- basins[which(basins$BASIN %in% rownames(fishdb1)), ]
+# fishdb1 <- fishdb1[-which(rowSums(fishdb1) <= 20), ] # Retrait sites à faible richesse
 
 
 # 2.
-dist.fish1 <- beta.pair(fishdb1, 
+dist.subtidal <- beta.pair(subtidaldb, 
                         index.family ="sorensen")
 
 
