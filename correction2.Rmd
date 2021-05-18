@@ -1,5 +1,5 @@
 ---
-title: "UE BIME - TP bioregionalisation avec les réseaux"
+title: "TP bioregionalisation avec les réseaux"
 author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
 output: html_document
 editor_options: 

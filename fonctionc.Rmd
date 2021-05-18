@@ -1,5 +1,5 @@
 ---
-title: "UE BIME - TP bioregionalisation avec les réseaux"
+title: "TP bioregionalisation avec les réseaux"
 author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
 output: html_document
 editor_options: 
@@ -82,13 +82,13 @@ Fonctions cophenetic et cor dans le package stats. Cette étape est plus compliq
 Voici un script qui fonctionne :
 ```{r}
 # On récupère les distances cophénétiques de l'arbre consensus, on les met en format matrix
-coph.subtidal <- as.matrix(cophenetic(as.hclust(tree.subtidal$cons)))
+coph.subtidal <- as.matrix(cophenetic(tree.subtidal$cons))
 
 # On fait en sorte que l'ordre des sites soit identique entre la matrice de distance initiale (dist.subtidal$beta.sim) et la matrice de distance cophénétique grâce à la commande match
 coph.subtidal <- coph.subtidal[match(attr(dist.subtidal$beta.sim, "Labels"), 
-rownames(coph.subtidal)),
-match(attr(dist.subtidal$beta.sim, "Labels"), 
-colnames(coph.subtidal))]
+                                     rownames(coph.subtidal)),
+                               match(attr(dist.subtidal$beta.sim, "Labels"), 
+                                     colnames(coph.subtidal))]
 # On transforme la "matrice de distance" (= format "dist") initiale en matrice (= format "matrix"), pour pouvoir calculer la corrélation sur deux objets identiques
 dist.subtidal.matrix <- as.matrix(dist.subtidal$beta.sim)
 
@@ -119,10 +119,10 @@ plot(chosen.tree,
 
 # On va également ajouter un axe pour voir la hauteur de l'arbre. C'est assez complexe car le package sous lequel l'arbre a été créé (phytools) est dédié aux analyses phylogénétiques, et est supposé indiquer les âges des lignées (le zéro est donc à gauche sur l'axe). En outre, il affiche l'arbre sur des valeurs divisés par deux. Voici du code qui permet de corriger ces défauts pour notre type d'analyse
 axis(1, 
-     at = seq(max(cophenetic(as.hclust(tree.subtidal$cons))), 0, 
-              by = -round(max(cophenetic(as.hclust(tree.subtidal$cons)))/4, 2)) / 2,
-     labels = seq(0, max(cophenetic(as.hclust(tree.subtidal$cons))), 
-                  by = round(max(cophenetic(as.hclust(tree.subtidal$cons)))/4, 2)))
+     at = seq(max(cophenetic(tree.subtidal$cons)), 0, 
+              by = -round(max(cophenetic(tree.subtidal$cons))/4, 2)) / 2,
+     labels = seq(0, max(cophenetic(tree.subtidal$cons)), 
+                  by = round(max(cophenetic(tree.subtidal$cons))/4, 2)))
 ```
 
 # 6. Rechercher la hauteur à laquelle couper l'arbre
