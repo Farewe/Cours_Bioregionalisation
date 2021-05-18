@@ -17,7 +17,7 @@ library(plyr)
 library(RColorBrewer)
 
 # Répertoire de travail
-setwd("d:/r/projects/Cours_Bioregionalisation/")
+# setwd("d:/r/projects/Cours_Bioregionalisation/")
 
 # Shapefiles
 basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
