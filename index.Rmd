@@ -147,10 +147,10 @@ Répétez les étapes 2-9 pour la base de données fishdb2 et comparez les graph
 Utilisez la fonction `partic.coef`.
 
 ```{r eval=FALSE}
-objet.sortie <- partic.coef(<arbre map equation>, 
-                         db = fishdb1, site.field = "Basin",
-                         species.field = "Species",
-                         cluster.field = "lvl1")
+objet.sortie <- participationCoefficient(<arbre map equation>, 
+                                         db = fishdb1, site.field = "Basin",
+                                         species.field = "Species",
+                                         cluster.field = "lvl1")
 ```
 
 
