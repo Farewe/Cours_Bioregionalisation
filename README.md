@@ -11,3 +11,6 @@ betapart
 recluster
 dendextend
 rgdal
+rnaturalearth
+rnaturalearthdata
+

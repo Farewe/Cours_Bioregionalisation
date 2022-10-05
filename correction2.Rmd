@@ -20,7 +20,7 @@ library(RColorBrewer)
 # setwd("d:/r/projects/Cours_Bioregionalisation/")
 
 # Shapefiles
-basins <- readOGR("./data/data_cours/basin2013_simplif.shp")
+basins <- readOGR("./data/data_cours/basin_simplif.shp")
 
 # Occurrence databases
 load("./data/data_cours/fishdb1.RData")
@@ -43,7 +43,7 @@ writePajek(fishdb1,
 # 3. Appliquer l'algorithme de clusterisation
 
 ```{r}
-system("./infomap --undirected --tree --map ./data/fishdb1.net ./data/")
+system("./infomap ./data/fishdb1.net ./data/ --tree -N 10")
 ```
 
 
@@ -53,7 +53,7 @@ system("./infomap --undirected --tree --map ./data/fishdb1.net ./data/")
 fish.net1 <- readInfomapTree("./data/fishdb1.tree")
 ```
 
-La fonction nous informe que le réseau a une hiérarchie de 5 niveaux, avec 15 clusters identifiés au niveau 1.
+La fonction nous informe que le réseau a une hiérarchie de 4 niveaux, avec 5 clusters identifiés au niveau 1.
 
 
 # 5. Analyser séparément les sites et les espèces
@@ -67,7 +67,7 @@ count(fish.sites1$lvl1)
 count(fish.species1$lvl1)
 ```
 
-On observe que les 15 clusters du niveau 1 sont hétérogènes. Certains clusters contiennent beaucoup de bassins et sont très riches, tandis que d'autres ont peu de bassins et sont peu riches. S'agissant d'étudier les grandes régions biogéographiques, nous allons limiter notre analyse aux clusters qui ont beaucoup de bassins et beaucoup d'espèces. Les 6 premiers clusters ont plus de 50 bassins versants et plus de 200 espèces, donc nous travaillerons avec ces 6 clusters ici, mais vous pouvez choisir un chiffre différent (et vos résultats peuvent différer - MapEquation fonctionne sur un processus aléatoire donc il faut faire des répétitions, [cf. tutorial en ligne](https://github.com/Farewe/biogeonetworks)).
+On observe que les 5 clusters du niveau 1 sont hétérogènes. Certains clusters contiennent beaucoup de bassins et sont très riches, tandis que d'autres ont peu de bassins et sont peu riches. S'agissant d'étudier les grandes régions biogéographiques, nous allons limiter notre analyse aux clusters qui ont beaucoup de bassins et beaucoup d'espèces. Les 4 premiers clusters ont plus de 100 bassins versants et plus de 200 espèces, donc nous travaillerons avec ces 4 clusters ici, mais vous pouvez choisir un chiffre différent (et vos résultats peuvent différer - MapEquation fonctionne sur un processus aléatoire donc il faut faire des répétitions).
 
 Le chiffre que vous choisirez n'a pas beaucoup d'impact à ce stade car il va servir aux couleurs sur les cartes (les clusters principaux seront colorés, tandis que les clusters secondaires seront en gris dans notre exemple).
 
@@ -75,15 +75,15 @@ Le chiffre que vous choisirez n'a pas beaucoup d'impact à ce stade car il va se
 
 
 ```{r}
-fish.net1 <- attributeColors(fish.net1, nb.max.colors = 6, db = fishdb1)
-fish.sites1 <- attributeColors(fish.sites1, nb.max.colors = 6, db = fishdb1)
+fish.net1 <- attributeColors(fish.net1, nb.max.colors = 4, db = fishdb1)
+fish.sites1 <- attributeColors(fish.sites1, nb.max.colors = 4, db = fishdb1)
 ```
 
 
 # 7. Affichez la carte des bassins avec les couleurs des régions
 
 ```{r}
-basins@data$color1 <- fish.net1$color[match(basins@data$BASIN, fish.net1$Name)]
+basins@data$color1 <- fish.net1$color[match(basins@data$BasinName, fish.net1$Name)]
 plot(basins, col = basins@data$color1)
 ```
 
@@ -108,7 +108,7 @@ writePajek(fishdb2,
            species.field = "Species",
            filename = "./data/fishdb2.net")
 
-system("./infomap --undirected --tree --map ./data/fishdb2.net ./data/")
+system("./infomap ./data/fishdb2.net ./data/ --tree -N 10")
 
 fish.net2 <- readInfomapTree("./data/fishdb2.tree")
 
@@ -120,10 +120,10 @@ head(fish.sites2)
 count(fish.sites2$lvl1)
 count(fish.species2$lvl1)
 
-fish.net2 <- attributeColors(fish.net2, nb.max.colors = 6, db = fishdb2)
-fish.sites2 <- attributeColors(fish.sites2, nb.max.colors = 6, db = fishdb2)
+fish.net2 <- attributeColors(fish.net2, nb.max.colors = 3, db = fishdb2)
+fish.sites2 <- attributeColors(fish.sites2, nb.max.colors = 3, db = fishdb2)
 
-basins@data$color2 <- fish.net2$color[match(basins@data$BASIN, fish.net2$Name)]
+basins@data$color2 <- fish.net2$color[match(basins@data$BasinName, fish.net2$Name)]
 
 op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
 plot(basins, col = basins@data$color1)
@@ -139,34 +139,8 @@ writeGDF(fishdb2, fish.net2, site.field = "Basin", species.field = "Species", co
 
 La différence est due au fait que la base fishdb2 intègre les occurrences d'introduction par l'homme des poissons d'eau douce, ce qui masque les patrons naturels et change la forme des régions biogéographiques de poissons d'eau douce.
 
-# 11. (facultatif) Calculez le coefficient de participation.
 
-```{r eval=FALSE}
-fish.net1 <- participationCoefficient(fish.net1, 
-                                      db = fishdb1, site.field = "Basin",
-                                      species.field = "Species",
-                                      lvl = "lvl1")
-fish.net2 <- participationCoefficient(fish.net2, 
-                                      db = fishdb2, site.field = "Basin",
-                                      species.field = "Species",
-                                      lvl = "lvl1")
-rbPal <- colorRampPalette(c('blue','red'))
-fish.net1$pcCol <- rbPal(10)[as.numeric(cut(fish.net1$participation.coef, breaks = 10))]
-basins@data$pcCol1 <- fish.net1$pcCol[match(basins@data$BASIN, fish.net1$Name)]
-fish.net2$pcCol <- rbPal(10)[as.numeric(cut(fish.net2$participation.coef, breaks = 10))]
-basins@data$pcCol2 <- fish.net2$pcCol[match(basins@data$BASIN, fish.net2$Name)]
-
-op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
-plot(basins, col = basins@data$pcCol1)
-plot(basins, col = basins@data$pcCol2)
-par(op)
-
-```
-
-
-Ajoutez le coefficient de participation à votre table attributaire des bassins, et visualisez le coefficient de participation.
-
-# 12. (facultatif) Faites une belle carte :) 
+# 11. (facultatif) Faites une belle carte :) 
 
 ```{r}
 library(sf)
@@ -196,7 +170,6 @@ basinsf <- st_as_sf(basins)
 basinsf <- st_transform_proj(basinsf, 
                              crs = "+proj=wintri")
 
-# RICHNESS NATIVE
 ggplot() +
   geom_sf(data = gr, color = 'grey', # graticule
           size = .5) +
