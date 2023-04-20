@@ -37,7 +37,7 @@ Mettez l'exécutable dans votre répertoire de travail.
 
 [Téléchargez les données ici](https://github.com/Farewe/Cours_Bioregionalisation/raw/gh-pages/data/data_cours/data_cours.zip)
 
-Utilisez les fonctions `load` et `readOGR` (package sp)
+Utilisez les fonctions `load` (base R) et `st_read` (package sf)
 
 
 # 2. Créer le réseau biogéographique

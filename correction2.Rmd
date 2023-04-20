@@ -10,9 +10,9 @@ editor_options:
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
 ```{r}
-# Packages
+# Packagesù
 library(biogeonetworks)
-library(rgdal)
+library(sf)
 library(plyr)
 library(RColorBrewer)
 
@@ -20,7 +20,7 @@ library(RColorBrewer)
 # setwd("d:/r/projects/Cours_Bioregionalisation/")
 
 # Shapefiles
-basins <- readOGR("./data/data_cours/basin_simplif.shp")
+basins <- st_read("./data/data_cours/basin_simplif.shp")
 
 # Occurrence databases
 load("./data/data_cours/fishdb1.RData")
@@ -83,8 +83,8 @@ fish.sites1 <- attributeColors(fish.sites1, nb.max.colors = 4, db = fishdb1)
 # 7. Affichez la carte des bassins avec les couleurs des régions
 
 ```{r}
-basins@data$color1 <- fish.net1$color[match(basins@data$BasinName, fish.net1$Name)]
-plot(basins, col = basins@data$color1)
+basins$color1 <- fish.net1$color[match(basins$BasinName, fish.net1$Name)]
+plot(basins[1], col = basins$color1)
 ```
 
 
@@ -123,11 +123,11 @@ count(fish.species2$lvl1)
 fish.net2 <- attributeColors(fish.net2, nb.max.colors = 3, db = fishdb2)
 fish.sites2 <- attributeColors(fish.sites2, nb.max.colors = 3, db = fishdb2)
 
-basins@data$color2 <- fish.net2$color[match(basins@data$BasinName, fish.net2$Name)]
+basins$color2 <- fish.net2$color[match(basins$BasinName, fish.net2$Name)]
 
 op <- par(mfrow = c(2, 1), mar = c(1.1, 1.1, 1.1, 1.1))
-plot(basins, col = basins@data$color1)
-plot(basins, col = basins@data$color2)
+plot(basins[1], col = basins$color1)
+plot(basins[2], col = basins$color2)
 par(op)
 
 writeGDF(fishdb2, fish.net2, site.field = "Basin", species.field = "Species", color.field = "color",
@@ -143,7 +143,6 @@ La différence est due au fait que la base fishdb2 intègre les occurrences d'in
 # 11. (facultatif) Faites une belle carte :) 
 
 ```{r}
-library(sf)
 library(lwgeom)
 library(ggplot2)
 library(rnaturalearth)
@@ -164,10 +163,8 @@ wm <- st_transform_proj(wm,
                         crs = "+proj=wintri")
 
 
-# Transformation des bassins en objet sf
-basinsf <- st_as_sf(basins)
 # Projection des bassins en wintri
-basinsf <- st_transform_proj(basinsf, 
+basins <- st_transform_proj(basins, 
                              crs = "+proj=wintri")
 
 ggplot() +
@@ -175,7 +172,7 @@ ggplot() +
           size = .5) +
   geom_sf(data = wm, col = grey(.6), fill = grey(.9), # continents
           size = .2) +
-  geom_sf(data = basinsf, aes(fill = color1), # bassins avec couleurs des régions
+  geom_sf(data = basins, aes(fill = color1), # bassins avec couleurs des régions
           size = .05) +
   theme_minimal() + # thème simplifié pour ggplot2
   coord_sf(datum = NA) + # obligatoire pour pouvoir utiliser les projections de lwgeom

@@ -1,7 +1,7 @@
 # v2.6.0
 # ./Infomap ./data/fishdb2.net ./data/ --tree -N 10
-# started at 2022-10-05 17:16:20
-# completed in 3.6461 s
+# started at 2023-04-20 14:03:14
+# completed in 4.5572 s
 # partitioned into 4 levels with 4 top modules
 # codelength 8.41831 bits
 # relative codelength savings 26.5275%
