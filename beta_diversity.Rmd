@@ -1,5 +1,5 @@
 ---
-title: "UE BIME - TP bioregionalisation avec les réseaux"
+title: "TP bioregionalisation avec la diversité beta"
 author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
 output: html_document
 editor_options: 
@@ -25,6 +25,12 @@ Ces données sont issues [d'un travail publié sur la conservation des communaut
 Pour ce TP vous avez besoin de cinq packages : `betapart` (calcul de diversité beta), `recluster` (fonctions de clusterisation), `dendextend` (fonctions utiles pour la manipulation de dendrogrammes), `vegan` (NMDS) et `rnaturalearth` (fond de carte).
 
 # 1. Chargement des données
+
+Téléchargez les données:
+
+- [Matrice de présence-absence](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/invertebres_benthiques.RDS)
+
+- [Localisation des sites](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/sites_invertebresbenthiques.RDS)
 
 Chargez la matrice de présence-absence et la localisation des sites en utilisant la commande `readRDS`.
 

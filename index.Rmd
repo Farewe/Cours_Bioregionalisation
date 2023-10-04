@@ -1,5 +1,5 @@
 ---
-title: "UE BIME - TP bioregionalisation avec les réseaux"
+title: "TP bioregionalisation avec les réseaux"
 author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
 output: html_document
 editor_options: 
@@ -11,7 +11,9 @@ editor_options:
 Vous avez à votre disposition deux bases de données sur la distribution des poissons d’eau douce par bassin versant (fishdb1 et fishdb2), à l’échelle du monde entier. Votre but est de déterminer les régions biogéographiques de poissons d’eau douce à l’échelle globale pour ces deux bases de données, de les comparer. Sur la base de cette comparaison, trouvez ce qui différencie ces deux bases de données.
 Ici, vous appliquerez la première des deux approches vues en cours : les réseaux biogéographiques. Pour cette approche, vous comparerez les réseaux et les cartes entre les deux bases.
 
-# Pré-requis : Installer et charger le package `biogeonetworks`
+# Pré-requis : 
+
+## Installer et charger le package `biogeonetworks`
 
 Il n'existe pas de package R permettant d'analyser facilement les réseaux biogéographiques aujourd'hui, donc j'en ai développé un pour vous faciliter la tâche. Il s'agit du package `biogeonetworks`. Ce package fournit plusieurs fonctions pour lire, écrire et manipuler les réseaux biogéographiques. Il est fait pour interagir avec le logiciel de visualisation Gephi et l'algorithme de clusterisation Map Equation. 
 
@@ -24,9 +26,18 @@ devtools::install_github("Farewe/biogeonetworks")
 
 [Il existe un tutorial pour apprendre `biogeonetworks` en profondeur ici](https://github.com/Farewe/biogeonetworks), mais pour ce TP vous n'en avez pas besoin.
 
+## Récupérer l'algorithme map equation
+
+Allez sur le [github de map equation](https://github.com/mapequation/infomap/releases) pour récupérer l'algorithme. Prenez bien l'algorithme qui correspond à votre système d'exploitation. Prenez les versions de base, pas les versions "noomp" (= sans Open MP, une librairie de parallélisation - n'essayez les verisions noomp que si la version de base ne fonctionne pas).
+
+Mettez l'exécutable dans votre répertoire de travail. 
+
+
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
-Utilisez les fonctions `load` et `readOGR` (package sp)
+[Téléchargez les données ici](https://github.com/Farewe/Cours_Bioregionalisation/raw/gh-pages/data/data_cours/data_cours.zip)
+
+Utilisez les fonctions `load` (base R) et `st_read` (package sf)
 
 
 # 2. Créer le réseau biogéographique
@@ -37,23 +48,22 @@ Utilisez la fonction writePajek : fournir la base de données, et les noms des c
 
 # 3. Appliquer l'algorithme de clusterisation
 
-Rechercher les régions avec Map Equation, en précisant comme options que le réseau est non dirigé (--undirected) et que vous voulez les résultats sous forme d’arbre (--tree).  Map Equation se lance en ligne de commande ; il est possible de le lancer depuis R avec la fonction `system()`.
-
-
+Rechercher les régions avec Map Equation, que vous voulez les résultats sous forme d’arbre (`--tree`) et que vous voulez qu'il tourne 10 fois pour trouver la solution optimal (`-N 10`.  Map Equation se lance en ligne de commande ; il est possible de le lancer depuis R avec la fonction `system()`. Si vous voulez connaître tous les arguments possibles de map equation, allez jeter un oeil [à leur site web](https://www.mapequation.org/infomap/#Parameters)
 
 
 ```{r eval=FALSE}
 # Structure de la commande :
-# <chemin vers infomap> <arguments d'infomap> <chemin vers le fichier du réseau biogéographique> <chemin vers le dossier de sortie>
+# <chemin vers infomap>       <chemin vers le fichier du réseau biogéographique>     <chemin vers le dossier de sortie>     <arguments d'infomap> 
 # exemple :
-# "c:/r/infomap        --undirected --tree    c:/r/data/fishdb1.net                          c:/r/data"
+# "c:/r/infomap                 c:/r/data/fishdb1.net                                   c:/r/data"                          --tree -N 10
 
-system("./infomap --undirected –-tree ./data/fishdb1.net ./data/")
+system("./infomap ./data/fishdb1.net ./data/ --tree -N 10")
+
 ```
 
 
 ![](img/ME.png)
-
+(Exemple de résultat, vous aurez certainement un résultat différent avec moins de régions)
 
 # 4. Lire l'arbre et les clusters créés par Map Equation sous R
 
@@ -102,7 +112,7 @@ Ci-dessous un exemple de code, où on veut associer la colonne "Color" de tablea
 
 
 ```{r eval=FALSE}
-tableau2$Color <- tableau1$Color[match(tableau2$Basin, tableau1$Name)]
+tableau2$Color <- tableau1$Color[match(tableau2$BasinName, tableau1$Name)]
 ```
 
 
@@ -140,20 +150,6 @@ Répétez les étapes 2-9 pour la base de données fishdb2 et comparez les graph
 
 **Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
 
-# 11. (facultatif) Calculez le coefficient de participation.
-
-Utilisez la fonction `partic.coef`.
-
-```{r eval=FALSE}
-objet.sortie <- partic.coef(<arbre map equation>, 
-                         db = fishdb1, site.field = "Basin",
-                         species.field = "Species",
-                         cluster.field = "lvl1")
-```
-
-
-Ajoutez le coefficient de participation à votre table attributaire des bassins, et visualisez le coefficient de participation.
-
-# 12. (facultatif) Faites une belle carte :) 
+# 11. (facultatif) Faites une belle carte :) 
 
 Essayez de changer la projection, d'ajouter un graticule...
