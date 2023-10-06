@@ -15,35 +15,18 @@ zip("data/data_cours/data_cours.zip",
               "fishdb1.RDS", "fishdb2.RDS"))
 ```
 
-# Introduction
+# Introduction  ฅ՞•ﻌ•՞ฅ
 
 Vous avez à votre disposition deux bases de données sur la distribution des poissons d’eau douce par bassin versant (fishdb1 et fishdb2), à l’échelle du monde entier. Votre but est de déterminer les régions biogéographiques de poissons d’eau douce à l’échelle globale pour ces deux bases de données, de les comparer. Sur la base de cette comparaison, trouvez ce qui différencie ces deux bases de données.
 Ici, vous appliquerez la première des deux approches vues en cours : les réseaux biogéographiques. Pour cette approche, vous comparerez les réseaux et les cartes entre les deux bases.
 
-# Pré-requis : 
+# Pré-requis
 
 ## Installer le package `bioregion` 
 
 Installez le package `bioregion` depuis le CRAN et installez les exécutables des méthodes basées sur les réseaux avec la fonction `install_binaries()`. En effet, plusieurs méthodes de clustering sur les réseaux (dont celle que l'on va utiliser) ne sont pas disponibles sur R et sont basées sur des fichiers exécutables. Heureusement, R peut appeler ces fichiers exécutables et les lancer - c'est ce que fait le package bioregion, à condition que vous ayez bien lancé `install_binaries()`. 
 
 Un point particulièrement important est de choisir où installer les fichiers exécutables. Je vous suggère de les mettre dans un dossier fixe et simple, par exemple dans un dossier `C:/R` (utilisateurs Windows) ou un dossier `/Users/<nom utilisateur>/Documents/R` (utilisateurs mac - mettez bien votre nom d'utilisateur pour corriger le chemin).
-
-## Installer et charger le package `biogeonetworks`
-
-Sachant qu'il n'existait pas de package sur R pour faire les réseaux biogéogrpahique, j'avais développé le package R en 2019 `biogeonetworks` pour permettre de faire ces analyses en TPs avec les étudiants de l'UE BIME et des modules d'école doctorale du MNHN. [Ce package a également été utilisé dans plusieurs articles scientifiques](https://scholar.google.fr/scholar?oi=bibs&hl=fr&cites=6618720442550135383).
-
-`biogeonetworks`  a vocation à être remplacé totalement par `bioregion` (publié sur le CRAN en avril 2023) dans le futur. Je n'ai pas encore implémenté toutes les fonctions de `biogeonetworks` dans `bioregion`, donc vous allez encore avoir besoin d'utiliser `biogeonetworks` cette année (probablement la dernière année).
-
-
-Sachant `biogeonetworks` n'a pas été publié  sur le CRAN, pour l'installer vous devez le faire depuis le dépôt de développement GitHub avec les commandes suivantes :
-
-```{r eval = FALSE}
-install.packages("devtools")
-devtools::install_github("Farewe/biogeonetworks")
-```
-
-[Il existe un tutorial pour apprendre `biogeonetworks` en profondeur ici](https://github.com/Farewe/biogeonetworks), mais pour ce TP vous n'en avez pas besoin, et ce tutorial sera remplacé dans le futur par un workflow entièrement sur `bioregion`.
-
 
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
@@ -82,31 +65,29 @@ Utilisez les fonctions `readRDS()` (base R) et `st_read` (package sf)
 
 Il est possible de rechercher des clusters sur les deux types de réseaux ; cependant aujourd'hui nous allons nous concentrer uniquement sur les réseaux bipartites car c'est cette approche qui est plus novatrice en biogéographie.
 
-# 2. Rechercher les clusters sur le réseau
+# 3. Rechercher les clusters sur le réseau
+
+## 3.1 Lancer l'algorithme infomap
 
 Les fichiers fishdb1 et fishdb2 sont déjà formatés comme il convient pour constituter des réseaux : chaque ligne représente l'occurrence d'une espèce dans un site - donc chaque ligne correspond à un lien entre espèce et site.
 
 A partir de là, vous pouvez rechercher les clusters sur la base du réseau en utilisant l'algorithme infomap avec la commande `netclu_infomap()`. Plusieurs éléments sont importants à configuer ici :
 
-* Par défaut, `netclu_infomap()` attend un réseau pondéré. Il s'agit ici d'un réseau bipartite en occurrence, donc non pondéré. Argument `weight`
+* Par défaut, `netclu_infomap()` attend un réseau pondéré. Il faut donc prévenir la fonction qu'il s'agit ici d'un réseau non pondéré. Argument `weight`
 
 * Il faut donner le chemin vers le dossier où vous avez installé les binaires dans les pré-requis. Dans mon cas c'est `binpath = "c:/r"`
 
 * Par défaut, `netclu_infomap()` attend un réseau unipartite. Il faut prévenir la fonction qu'il s'agit d'un réseau bipartite, avec l'argument `bipartite`. Ca lui permet de savoir que vous avez donc deux types de noeuds différents, cependant il faut lui préciser aussi quelle colonne contient les sites et quelle colonne contient les espèces avec les arguments `site_col` et `species_col`.
 
-* infomap est un algorithme qui fonctionne de manière aléatoire. Il faut donc lui faire faire plusieurs répétitions pour obtenir un résultat qui ne soit pas le fruit d'un hasard pur. Utiliser l'argument `numtrials` pour lui demander de faire 100 répétitions
+* infomap est un algorithme qui fonctionne de manière aléatoire. Il faut donc lui faire faire plusieurs répétitions pour obtenir un résultat qui soit stable. Utiliser l'argument `numtrials` pour lui demander de faire 100 répétitions
 
 * **Très important** : les résultats d'infomap sont hiérarchiques ; cependant si vous n'affichez pas la hiérarchie (argument `show_hierarchy`), dans ce cas vous ne pouvez pas interpréter correctement les résultats du clustering. Faites la comparaison des résultats entre `show_hierarchy = TRUE` et `show_hierarchy = FALSE`, vous comprendrez l'importance de cet argument.  
 
-* Enfin, l'algorithme infomap peut être paramétré spécifiquement pour les réseaux bipartites, ou pas. A titre personnel, j'ai toujours utilisé infomap en mode non-bipartite, car cette option n'existait pas dans ses premières versions. Je trouve que les résultats sont moins pertinents d'un point de vue biologique quand cette option est activée, donc je ne la mets pas, mais je vous invite à découvrir cette option par vous-mêmes et à la tester sur vos jeux de données. Pour activer ou désactiver la version bipartite d'infomap, il faut utiliser l'argument `bipartite_version`
+* Enfin, l'algorithme infomap peut être paramétré spécifiquement pour les réseaux bipartites, ou pas (argument `bipartite_version`). A titre personnel, je n'utilise jamais cette option bipartite, car elle n'existait pas dans ses premières versions, et je trouve qu'elle dégrade la pertinence des résultats d'un point de vue biologique. Néanmoins, c'est une opinion assez subjective, et donc je vous invite à vous faire votre propre opinion si vous utilisez infomap sur vos jeux de données à vous. Pour activer ou désactiver la version bipartite d'infomap, il faut utiliser l'argument `bipartite_version`
 
 
 
-Créez le réseau biogéographique à partir de `fishdb1` écrivez le sur le disque dur dans un format lisible (format PAJEK) par map equation.
-
-Utilisez la fonction writePajek : fournir la base de données, et les noms des colonnes correspondant aux espèces et aux sites, et le nom du fichier pajek (extension .net). Taper ?writePajek pour connaître les arguments. 
-
-# 2. Première lecture et interprétation du résultat
+## 3.2. Première lecture et interprétation du résultat
 
 Quand vous tapez le nom de l'objet issu de la clusterisation dans la console, vous obtenez un premier résultat, qui vous donne plusieurs infos :
 
@@ -114,7 +95,7 @@ Quand vous tapez le nom de l'objet issu de la clusterisation dans la console, vo
 
 * le nombre de clusters dans chaque partitions. Les partitions apparaissent par ordre hiérarchique, comme un arbre, du niveau le plus haut au niveau le plus bas. La première partition contient généralement quelques gros clusters ; les partitions suivantes continennent généralement des sous-clusters plus nombreux, emboîtés dans les niveaux supérieurs.
 
-Question : combien de niveaux avez-vous ? Combien de clusters à chaque niveau ?
+**Question :** combien de niveaux avez-vous ? Combien de clusters à chaque niveau ?
 
 
 Ensuite, inspectez les clusters en eux-mêmes. Pour cela, il faut accéder au tableau qui attribue les clusters aux sites et aux espèces (`<votre objet>$clusters`). Notez comment les clusters ont une notation hiérarchique. Prenons un cas de figure comme ceci :
@@ -124,14 +105,15 @@ Ensuite, inspectez les clusters en eux-mêmes. Pour cela, il faut accéder au ta
 Le site 'Acheloos' appartient au cluster 1 de la première partition, et au cluster 1.4 de la deuxième partition. Le "1.4" signifie _sous-cluster 4 du cluster 1_. On remarque que cette notation continue, et donc au niveau 3 il appartient au sous-sous-cluster 18 du sous-cluster 4 du niveau 1. Ainsi, chaque nouvelle partition reprend les informations de la partition précédente, pour que la hiérarchie soit bien apparente.
 
 
-Question : combien y a-t-il de sites et d'espèces par cluster pour la première partition ? Qu'en déduisez-vous pour les régions biogéographiques ? 
-
-Faites la même analyse pour la deuxième partition (= deuxième niveau hiérarchique).
+**Question :** combien y a-t-il de sites et d'espèces par cluster pour la première partition ? Qu'en déduisez-vous pour les régions biogéographiques ? 
 
 Pour inspecter le nombre d'espèces et de sites par niveau utilisez la fonction `count` du package `plyr` (permet de compter le nombre de répétitions d’un facteur).
 
+**Question :** Faites la même analyse pour la deuxième partition (= deuxième niveau hiérarchique).
 
-# 3. Analyser séparément les sites et les espèces
+
+
+# 4. Analyser séparément les sites et les espèces
 
 Notre tableau des clusters mélange les espèces et les sites. Nous allons donc le séparer en deux pour pouvoir analyser séparément espèces et sites. Pour cela, nous allons utiliser un outil de programmation pratique, la fonction `which(<condition>)`, qui sert, comme son nom l'indique ("lesquels respectent la condition"), à récupérer un sous-ensemble d'éléments. Procédons par étapes.
 
@@ -145,40 +127,43 @@ Notre tableau des clusters mélange les espèces et les sites. Nous allons donc 
 4. Refaites cette démarche pour ne garder que les espèces cette fois.
 
 
-Pensez bien à stocker les infos de clusters des sites et des espèces dans deux objets distincts, et ensuite répondez à cette question :
+Pensez bien à stocker les infos de clusters des sites et des espèces dans deux objets distincts.
+
+
+**Question :**
 
 Combien y a-t-il de sites par cluster dans les deux premières partitions ?
 Combien y a-t-il d'espèces par cluster dans les deux premières partitions ?
 
-# 4. Faites une carte des régions
+# 5. Faites une carte des régions
 
 C'est sûrement l'étape qui est la plus utile pour interpréter les clusters : visualiser ces clusters sur une carte. Néanmoins, ce n'est pas une étape si simple à réaliser que ça. En attendant que j'écrive une fonction qui fera le travail pour vous de manière simple, il va falloir mettre les mains dans le cambouis (×_×)
 
 Pour faire simple nous n'allons travailler que sur la partition de niveau 2, pas sur la partition de niveau 1. Si vous souhaitez la faire sur d'autres partitions il suffira d'adapter le code.
 
-## 4.1 Créer un tableau avec les couleurs pour chaque cluster
+## 5.1 Créer un tableau avec les couleurs pour chaque cluster
 
 Commencez par créer un tableau qui contiendra les clusters, et, pour chaque cluster, une couleur unique. On va utiliser les palettes de [RColorBrewer pour cela](colobrewer2.org), avec la fonction `brewer.pal()`:
 
 ```{r eval = FALSE}
 # On commence par récupérer les noms des clusters de la partition de niveau 2
 # En regardant le tableau des clusters on voit qu'il s'agit de la 3e colonne
-clusters.lvl2 <- unique(clusters1[, 3])
-clusters.lvl2
+clusters1.lvl2 <- unique(clusters1[, 3])
+clusters1.lvl2
 
 
 # Ensuite, on crée un tableau avec les couleurs sur la deuxième colonne
-bioregions <- data.frame(
-  clusters = clusters.lvl2, # La première colonne contient les clusters
+bioregions1 <- data.frame(
+  clusters = clusters1.lvl2, # La première colonne contient les clusters
   # La deuxième colonne contient les couleurs
   colors = brewer.pal(length(clusters.lvl2), # On veut autant de couleurs que de clusters
                       "Set2") # J'ai demandé la palette "Set2" ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
 )
 
-bioregions
+bioregions1
 ```
 
-## 4.2 Ajouter les couleurs dans le tableau des clusters
+## 5.2 Ajouter les couleurs dans le tableau des clusters 
 
 
 Une fois que l'on a un tableau avec des palettes de couleurs pour chaque cluster, on peut remplir notre objet spatial avec les clusters et les couleurs.
@@ -186,7 +171,7 @@ Pour cela il va falloir utiliser la commande `match()`, indispensable en program
 
 Voici une explication visuelle :
 
-**tableau1 (bioregions)**
+**tableau 1 (bioregions1)**
 
 | Cluster       | colors         | 
 | ------------- |:-------------:| 
@@ -196,7 +181,7 @@ Voici une explication visuelle :
 | 2.1           | Violet         |
 
 
-**tableau2 (clusters)**
+**tableau 2 (clusters1)**
 
 | ID            | Cluster       | 
 | ------------- |:-------------:| 
@@ -209,11 +194,11 @@ Voici une explication visuelle :
 
 
 ```{r eval=FALSE}
-tableau2$colors <- tableau1$colors[match(tableau2$Cluster, tableau1$Cluster)]
+clusters1$colors <- bioregions1$colors[match(clusters1$Cluster, bioregions1$Cluster)]
 ```
 
 
-**Résultat**
+**Résultat : une nouvelle colonne 'colors' dans clusters**
 
 | ID            | Cluster       | colors     |
 | ------------- |:-------------:| :--------:|
@@ -225,114 +210,47 @@ tableau2$colors <- tableau1$colors[match(tableau2$Cluster, tableau1$Cluster)]
 | ...             | ...           |   ...    |
 
 Que s'est-il passé dans cette commande maléfique ? Décomposons la. Nous extrayons la colonne "colors" du tableau bioregion avec la première partie :
-`tableau1$colors`. Notre objectif est de s'assurer que tous les sites qui sont dans le cluster 1.1 aient la couleur verte ; les sites 1.2 aient la couleur bleue, etc. On va pouvoir le faire grâce à la commande `match()` qui va faire correspondre les colonnes Cluster entre nos deux tableaux. Dans notre exemple ci-dessus, la commande `match()` va nous dire à quelles positions se trouvent les éléments de `tableau2$Cluster` dans `tableau1$Cluster`. Par exemple, le 1.1 de tableau2 est en position 2 dans tableau1, on sait donc qu'il faut prendre la 2e couleur de tableau1. Le 1.2 est en 3e position dans tableau1, on sait donc qu'il faut prendre la 3e couleur. Ainsi, en mettant notre match dans les crochets, on extrait la bonne couleur à la bonne position en faisant la correspondance des colonnes clusters.
+`bioregions1$colors`. Notre objectif est de s'assurer que tous les sites qui sont dans le cluster 1.1 aient la couleur verte ; les sites 1.2 aient la couleur bleue, etc. On va pouvoir le faire grâce à la commande `match()` qui va faire correspondre les colonnes Cluster entre nos deux tableaux. Dans notre exemple ci-dessus, la commande `match()` va nous dire à quelles positions se trouvent les éléments de `clusters1$Cluster` dans `bioregions1$Cluster`. Par exemple, le 1.1 de tableau2 est en position 2 dans tableau1, on sait donc qu'il faut prendre la 2e couleur de tableau1. Le 1.2 est en 3e position dans tableau1, on sait donc qu'il faut prendre la 3e couleur. Ainsi, en mettant notre match dans les crochets, on extrait la bonne couleur à la bonne position en faisant la correspondance des colonnes clusters.
 
 Allez-y, utilisez maintenant `match()` pour ajouter les couleurs depuis bioregions vers votre tableau des clusters.
 
 ```{r eval=FALSE}
-clusters1$color <- bioregions$colors[match(clusters1[, 3],
-                                           bioregions$clusters)]
+clusters1$color <- bioregions1$colors[match(clusters1[, 3],
+                                            bioregions1$clusters)]
 ```
 
 Vérifiez que ça a fonctionné en inspectant les premières lignes du tableau.
 
 
-## 4.3 Ajouter les couleurs dans l'objet spatial pour faire la carte
+## 5.3 Ajouter les couleurs dans l'objet spatial pour faire la carte
 
 Maintenant, à vous de jouer : ajoutez les couleurs (colonne color de votre tableau de clusters), dans l'objet sf qui contient les polygones pour faire la carte ! Mais il va falloir les mettre dans le bon ordre. Si vous regardez cet objet sf, vous verrez qu'il a une colonne appelée "BasinName", sur laquelle vous pouvez faire la correspondance avec la colonne "ID" de votre objet de clusters.
 
 Ensuite, il ne vous restera qu'à utiliser `plot()` en lui indiquant la colonne colors dans l'argument `col` !
 
-Bravo, vous avez fait vos premiers `match()`, c'est un outil fondamental en programmation sur R ! 
+Bravo, vous avez fait vos premiers `match()`, c'est un outil fondamental en programmation sur R !  
 
 
+# 6. Ecrire le réseau biogéographique pour Gephi
 
+Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier sur le disque dans un format particulier, en .gdf. C'est une opération assez complexe à réaliser, et il n'existe pas encore de fonction dans `bioregion`, donc j'ai écrit un draft de fonction pour que vous puissiez le faire dans ce TP.
 
-# 8. Ecrire le réseau biogéographique pour Gephi
-
-
-Ecrivez le réseau biogéographique avec les clusters et couleurs sur le disque dur dans un format lisible par Gephi (format .gdf). 
-
-Fonction `writeGDF`. Nécessite la base de données et le réseau. Précisez les noms des colonnes des colonnes correspondant aux sites et aux espèces dans la base de données. Précisez le nom de la colonne correspond à la couleur dans votre réseau. Donnez le nom de fichier sous lequel sera enregistré votre réseau (extension .gdf).
-
-
-
-
-Ensuite, nous  réordonner ces couleurs pour les aligners en face de nos bassins
-
-Nous allons voir deux façons de faire : une méthode simple, dans laquelle on ne choisit pas les couleurs, et une méthode où l'on définit nous-mêmes les couleurs. Cette deuxième méthode est plus complexe mais sera très utile pour comparer le réseau et la carte des régions.
-
-## 4.1 Carte simple et rapide
-
-Utilisez la fonction `map_clusters()` de bioregion pour afficher la carte :
-`map_clusters(fish_clusters1, basins, plot = TRUE)`
-
-
-Récupérez les tableaux indiquant quel bassin est associé à quelle région, et quelle espèce est associée à quelle région. Inspectez ces tableaux, et regardez le nombre de bassins / espèces dans chaque grande région (niveau 1, « lvl1 »). Déduisez-en le nombre de régions à garder.
-
-Fonction `getSiteTable` et `getSpeciesTable`. Ces deux fonctions nécessitent à la fois la base `fishdb1` et l’arbre créé par Map equation. N’oubliez pas de préciser les noms de colonnes correspondant aux espèces ou aux bassins. 
-
-
-
-# 6. Attribuer des couleurs aux grandes régions
-
-Attribuez des couleurs en vous limitant au nombre identifié à l’étape 5. 
-
-Fonction `attributeColors`, en précisant le nombre maximum de régions avec l’argument `nb.max.colors` et la base de données avec `db`. Lancez cette commande une première fois sur le réseau (issu de `readInfomapTree`), puis une seconde fois sur la table des bassins (issue de `getSiteTable`). Cela permettra d’avoir les bonnes couleurs à la fois sur le réseau complet (pour l’étape 8) et sur les bassins (pour la carte étape 7).
-
-# 7. Affichez la carte des bassins avec les couleurs des régions
-
-Pour cela, il faudra ajouter une colonne contenant les couleurs au data.frame de l’objet spatial. Attention !! Les couleurs doivent être dans le bon ordre !! Pour cela il faut faire la correspondance entre les noms des bassins dans l’objet spatial et les noms dans la table des bassins, avec la commande `match`.
-
-
-Ci-dessous un exemple de code, où on veut associer la colonne "Color" de tableau1 dans tableau2, tout en s'assurant que l'on ne mélange pas les sites (colonne Name).
-
-**tableau1**
-
-| Name          | Color         | 
-| ------------- |:-------------:| 
-| 1             | Red           | 
-| 2             | Green         |
-| 3             | Blue          |
-| 4             | Green         |
-
-
-**tableau2**
-
-| Name          | Richness      | 
-| ------------- |:-------------:| 
-| 2             | 31            | 
-| 1             | 42            |
-| 4             | 35            |
-| 3             | 21            |
-
+Vous pouvez installer cette fonction avec la commande suivante :
 
 ```{r eval=FALSE}
-tableau2$Color <- tableau1$Color[match(tableau2$BasinName, tableau1$Name)]
+devtools::source_url("https://raw.githubusercontent.com/Farewe/Cours_Bioregionalisation/master/scripts/exportGDF.R")
 ```
 
+La fonction sera chargée dans la mémoire de R avec le nom `exportGDF()`. Il n'y évidemment pas encore d'aide pour cette fonction car je ne l'ai implémentée dans aucun package. Voici donc une indication de comment elle doit fonctionner :
 
-**tableau2**
-
-| Name          | Richness      | Color    |
-| ------------- |:-------------:|:--------:|
-| 2             | 31            | Green    |
-| 1             | 42            | Red      |
-| 4             | 35            | Green    |
-| 3             | 21            | Blue     |
-
-Une fois que vous avez ajouté les couleurs dans la table attributaire des bassins, faites la carte, sans oublier de préciser l'argument `col` de la fonction `plot` pour avoir les couleurs.
+* argument `network` : votre réseau (fishdb1 ou 2)
+* argument `clusters` : votre tableau de clusters
+* argument `filename` : le nom du fichier à écrire sur le disque en .GDF
+* argument `weight` : à préciser s'il s'agit d'un réseau pondéré ou non pondéré
+* argument `color.field` : indiquer le nom de la colonne qui contient les couleurs dans votre tableau de clusters
 
 
-# 8. Ecrire le réseau biogéographique pour Gephi
-
-
-Ecrivez le réseau biogéographique avec les clusters et couleurs sur le disque dur dans un format lisible par Gephi (format .gdf). 
-
-Fonction `writeGDF`. Nécessite la base de données et le réseau. Précisez les noms des colonnes des colonnes correspondant aux sites et aux espèces dans la base de données. Précisez le nom de la colonne correspond à la couleur dans votre réseau. Donnez le nom de fichier sous lequel sera enregistré votre réseau (extension .gdf).
-
-
-# 9. Analysez le réseau biogéographique sous gephi
+# 7. Analysez le réseau biogéographique sous gephi
 
 Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre réseau avec l’algorithme force atlas 2. Ajustez la taille de vos noeuds selon leur « degré » (*Aspect* > *Noeuds* > *Ranking* > liste déroulante : *degré* - essayer différentes gammes de valeurs). Affichez les noms des noeuds et ajuster la taille des noms selon la même méthode. Exportez votre graphe dans la fenêtre « *Prévisualisation* » en jouant avec les options.
 
@@ -340,12 +258,24 @@ Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre r�
 
 
 
-# 10. Refaites l'analyse pour la seconde base de données
+# 8. Refaites l'analyse pour la seconde base de données
 
-Répétez les étapes 2-9 pour la base de données fishdb2 et comparez les graphes et les cartes.
+Répétez les étapes 3-7 pour la base de données fishdb2, **mais cette fois-ci en faisant l'analyse pour la première partition seulement**, et comparez les graphes et les cartes.
 
 **Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
 
-# 11. (facultatif) Faites une belle carte :) 
+# 9. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ
 
-Essayez de changer la projection, d'ajouter un graticule...
+Si vous avez terminé en avance, vous pouvez essayer de faire une belle carte :
+
+* créer un graticule avec `st_graticule()`
+* ajouter les limites des continents avec `ne_coastline()` du package rnaturalearth
+* projeter les objets spatiaux avec `st_transform_proj()`, en utilisant par exemple la projection du National Geographic Winkel Tripel :
+
+```{r eval = FALSE}
+basins_wt <- st_transform_proj(basins, 
+                               crs = "+proj=wintri")
+```
+
+* faire la carte finale sous ggplot2 avec toutes les couches. Attention, la projection winkel tripel nécessite de spécifier `datum = NA` à ggplot2: `coord_sf(datum = NA)`
+
