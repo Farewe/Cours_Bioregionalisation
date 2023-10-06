@@ -7,10 +7,19 @@ editor_options:
 ---
 
 
+# 0. Installation de bioregion biogeonetworks
+
+```{r}
+library(bioregion)
+install_binaries(binpath = "c:/r")
+```
+
+
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
 ```{r}
-# Packagesù
+# Packages
+library(bioregion)
 library(biogeonetworks)
 library(sf)
 library(plyr)
@@ -23,24 +32,115 @@ library(RColorBrewer)
 basins <- st_read("./data/data_cours/basin_simplif.shp")
 
 # Occurrence databases
-load("./data/data_cours/fishdb1.RData")
-load("./data/data_cours/fishdb2.RData")
+fishdb1 <- readRDS("./data/data_cours/fishdb1.RDS")
+fishdb2 <- readRDS("./data/data_cours/fishdb2.RDS")
 ```
 
 
-
-# 2. Créer le réseau biogéographique
-
+# 2. Rechercher les clusters sur le réseau
 
 ```{r}
-writePajek(fishdb1, 
-           site.field = "Basin",
-           species.field = "Species",
-           filename = "./data/fishdb1.net")
+
+fish_clusters1 <- netclu_infomap(net = fishdb1,
+                                 weight = FALSE,
+                                 binpath = "c:/r",
+                                 show_hierarchy = TRUE,
+                                 bipartite = TRUE,
+                                 bipartite_version = FALSE,
+                                 site_col = "Basin",
+                                 species_col = "Species")
 ```
 
 
-# 3. Appliquer l'algorithme de clusterisation
+# 2. Première lecture et interprétation du résultat
+
+```{r}
+fish_clusters1
+```
+
+Question : combien de niveaux avez-vous ? Combien de clusters à chaque niveau ?
+
+Il y a `r nrow(fish_clusters1$cluster_info)` niveaux. Au premier niveau, il y a `r fish_clusters1$cluster_info$n_clust[1]` clusters ; au deuxième niveau il y a `r fish_clusters1$cluster_info$n_clust[2]` clusters ; au troisième niveau, `r fish_clusters1$cluster_info$n_clust[3]` clusters et au quatrième niveau, `r fish_clusters1$cluster_info$n_clust[4]` clusters.
+
+
+Question : combien y a-t-il de sites et d'espèces par cluster pour la première partition ? Qu'en déduisez-vous pour les régions biogéographiques ? 
+
+```{r}
+plyr::count(fish_clusters1$clusters[, 2])
+```
+Il y a deux clusters principaux avec près de 6000 noeuds (ce sont des super-régions), et un tout petit cluster de 15 noeuds.
+
+
+Faites la même analyse pour la deuxième partition (= deuxième niveau hiérarchique).
+
+```{r}
+plyr::count(fish_clusters1$clusters[, 3])
+```
+Il y a six clusters principaux (six grandes régions), et toujours notre petit cluster marginal.
+
+
+# 3. Analyser séparément les sites et les espèces
+
+Combien y a-t-il de sites par cluster dans les deux premières partitions ?
+```{r}
+clusters1 <- fish_clusters1$clusters
+site_clusters <- clusters[which(clusters1$ID %in% fishdb1$Basin), ]
+plyr::count(site_clusters[2])
+plyr::count(site_clusters[3])
+```
+On voit que les 2 grands clusters du niveau 1 et les 6 grands clusters du niveau 2 ont tous un grand nombre de sites, comparables en taille. En revanche, le petit cluster n'a qu'un seul site - il s'agit probablement d'une zone avec des espèces endémiques trouvées nulle part ailleurs dans le monde. 
+
+
+Combien y a-t-il d'espèces par cluster dans les deux premières partitions ?
+```{r}
+species_clusters <- clusters[which(clusters1$ID %in% fishdb1$Species), ]
+plyr::count(species_clusters[2])
+plyr::count(species_clusters[3])
+```
+
+Les 2 clusters de niveau 1 sont à peu près équilibré en nombre d'espèces, tandis que les clusters de niveau 2 sont plus déséquilibrés : il y a des régions très riches (jusque 4700 espèces), et d'autres très pauvres (seulement 400 espèces).
+
+# 4. Faites une carte des régions
+## 4.1 Créer un tableau avec les couleurs pour chaque cluster
+
+```{r}
+# On commence par récupérer les noms des clusters de la partition de niveau 2
+# En regardant le tableau des clusters on voit qu'il s'agit de la 3e colonne
+clusters.lvl2 <- unique(clusters1[, 3])
+clusters.lvl2
+
+
+# Ensuite, on crée un tableau avec les couleurs sur la deuxième colonne
+bioregions <- data.frame(
+  clusters = clusters.lvl2, # La première colonne contient les clusters
+  # La deuxième colonne contient les couleurs
+  colors = brewer.pal(length(clusters.lvl2), # On veut autant de couleurs que de clusters
+                      "Set2") # J'ai demandé la palette "Set2" ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
+)
+
+bioregions
+```
+
+
+## 4.2 Ajouter les couleurs dans le tableau des clusters
+
+```{r}
+clusters1$color <- bioregions$colors[match(clusters1[, 3],
+                                           bioregions$clusters)]
+```
+
+## 4.3 Ajouter les couleurs dans l'objet spatial pour faire la carte
+
+```{r}
+basins$color <- clusters1$color[match(basins$BasinName,
+                                      clusters1$ID)]
+
+plot(basins[1],
+     col = basins$color)
+```
+
+
+
 
 ```{r}
 system("./infomap ./data/fishdb1.net ./data/ --tree -N 10")

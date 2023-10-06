@@ -370,45 +370,219 @@ réseaux et les cartes entre les deux bases.</p>
 </div>
 <div id="pré-requis" class="section level1">
 <h1>Pré-requis :</h1>
+<div id="installer-le-package-bioregion" class="section level2">
+<h2>Installer le package <code>bioregion</code></h2>
+<p>Installez le package <code>bioregion</code> depuis le CRAN et
+installez les exécutables des méthodes basées sur les réseaux avec la
+fonction <code>install_binaries()</code>. En effet, plusieurs méthodes
+de clustering sur les réseaux (dont celle que l’on va utiliser) ne sont
+pas disponibles sur R et sont basées sur des fichiers exécutables.
+Heureusement, R peut appeler ces fichiers exécutables et les lancer -
+c’est ce que fait le package bioregion, à condition que vous ayez bien
+lancé <code>install_binaries()</code>.</p>
+<p>Un point particulièrement important est de choisir où installer les
+fichiers exécutables. Je vous suggère de les mettre dans un dossier fixe
+et simple, par exemple dans un dossier <code>C:/R</code> (utilisateurs
+Windows) ou un dossier
+<code>/Users/&lt;nom utilisateur&gt;/Documents/R</code> (utilisateurs
+mac - mettez bien votre nom d’utilisateur pour corriger le chemin).</p>
+</div>
 <div id="installer-et-charger-le-package-biogeonetworks" class="section level2">
 <h2>Installer et charger le package <code>biogeonetworks</code></h2>
-<p>Il n’existe pas de package R permettant d’analyser facilement les
-réseaux biogéographiques aujourd’hui, donc j’en ai développé un pour
-vous faciliter la tâche. Il s’agit du package
-<code>biogeonetworks</code>. Ce package fournit plusieurs fonctions pour
-lire, écrire et manipuler les réseaux biogéographiques. Il est fait pour
-interagir avec le logiciel de visualisation Gephi et l’algorithme de
-clusterisation Map Equation.</p>
-<p>Je n’ai pas publié le package sur le CRAN, donc pour l’installer vous
-devez le faire depuis le répertoire de développement GitHub avec les
-commandes suivantes :</p>
+<p>Sachant qu’il n’existait pas de package sur R pour faire les réseaux
+biogéogrpahique, j’avais développé le package R en 2019
+<code>biogeonetworks</code> pour permettre de faire ces analyses en TPs
+avec les étudiants de l’UE BIME et des modules d’école doctorale du
+MNHN. <a href="https://scholar.google.fr/scholar?oi=bibs&amp;hl=fr&amp;cites=6618720442550135383">Ce
+package a également été utilisé dans plusieurs articles
+scientifiques</a>.</p>
+<p><code>biogeonetworks</code> a vocation à être remplacé totalement par
+<code>bioregion</code> (publié sur le CRAN en avril 2023) dans le futur.
+Je n’ai pas encore implémenté toutes les fonctions de
+<code>biogeonetworks</code> dans <code>bioregion</code>, donc vous allez
+encore avoir besoin d’utiliser <code>biogeonetworks</code> cette année
+(probablement la dernière année).</p>
+<p>Sachant <code>biogeonetworks</code> n’a pas été publié sur le CRAN,
+pour l’installer vous devez le faire depuis le dépôt de développement
+GitHub avec les commandes suivantes :</p>
 <pre class="r"><code>install.packages(&quot;devtools&quot;)
 devtools::install_github(&quot;Farewe/biogeonetworks&quot;)</code></pre>
 <p><a href="https://github.com/Farewe/biogeonetworks">Il existe un
 tutorial pour apprendre <code>biogeonetworks</code> en profondeur
-ici</a>, mais pour ce TP vous n’en avez pas besoin.</p>
-</div>
-<div id="récupérer-lalgorithme-map-equation" class="section level2">
-<h2>Récupérer l’algorithme map equation</h2>
-<p>Allez sur le <a href="https://github.com/mapequation/infomap/releases">github de map
-equation</a> pour récupérer l’algorithme. Prenez bien l’algorithme qui
-correspond à votre système d’exploitation. Prenez les versions de base,
-pas les versions “noomp” (= sans Open MP, une librairie de
-parallélisation - n’essayez les verisions noomp que si la version de
-base ne fonctionne pas).</p>
-<p>Mettez l’exécutable dans votre répertoire de travail.</p>
+ici</a>, mais pour ce TP vous n’en avez pas besoin, et ce tutorial sera
+remplacé dans le futur par un workflow entièrement sur
+<code>bioregion</code>.</p>
 </div>
 </div>
 <div id="chargement-des-données-bases-poissons-et-polygones-spatialisés-des-bassins" class="section level1">
 <h1>1. Chargement des données (bases poissons et polygones spatialisés
 des bassins)</h1>
-<p><a href="https://github.com/Farewe/Cours_Bioregionalisation/raw/gh-pages/data/data_cours/data_cours.zip">Téléchargez
+<p><a href="https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/data_cours/data_cours.zip">Téléchargez
 les données ici</a></p>
-<p>Utilisez les fonctions <code>load</code> (base R) et
+<p>Utilisez les fonctions <code>readRDS()</code> (base R) et
 <code>st_read</code> (package sf)</p>
 </div>
-<div id="créer-le-réseau-biogéographique" class="section level1">
-<h1>2. Créer le réseau biogéographique</h1>
+<div id="comprendre-les-grands-types-de-réseaux-utilisés-en-biogéographie" class="section level1">
+<h1>2. Comprendre les grands types de réseaux utilisés en
+biogéographie</h1>
+<ol style="list-style-type: decimal">
+<li><strong>Réseau unipartite pondéré</strong> Le réseau est issu d’une
+analyse de similarité entre sites (diversité beta, mais en similarité,
+pas en dissimilarité), où chaque ligne indique la distance entre 2
+sites. C’est comme une matrice de distance écrite sous forme de
+tableau.</li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Noeud1</th>
+<th align="left">Noeud2</th>
+<th align="right">Similarité</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Site1</td>
+<td align="left">Site2</td>
+<td align="right">0.9</td>
+</tr>
+<tr class="even">
+<td align="left">Site1</td>
+<td align="left">Site3</td>
+<td align="right">0.8</td>
+</tr>
+<tr class="odd">
+<td align="left">Site2</td>
+<td align="left">Site3</td>
+<td align="right">0.85</td>
+</tr>
+<tr class="even">
+<td align="left">Site2</td>
+<td align="left">Site4</td>
+<td align="right">0.15</td>
+</tr>
+</tbody>
+</table>
+<ol start="2" style="list-style-type: decimal">
+<li><strong>Réseau bipartite non pondéré</strong> Le réseau peut être
+bipartite, c’est à dire que les deux colonnes correspondent à des types
+de noeuds différents. En l’occurrence, ici, <em>fishdb1</em> et
+<em>fishdb2</em> sont des réseaux bipartites où la première colonne
+correspond aux sites, et la deuxième colonne aux noms d’espèces</li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Noeud1</th>
+<th align="left">Noeud2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Site1</td>
+<td align="left">Espèce A</td>
+</tr>
+<tr class="even">
+<td align="left">Site1</td>
+<td align="left">Espèce B</td>
+</tr>
+<tr class="odd">
+<td align="left">Site2</td>
+<td align="left">Espèce A</td>
+</tr>
+<tr class="even">
+<td align="left">Site2</td>
+<td align="left">Espèce C</td>
+</tr>
+</tbody>
+</table>
+<ol start="3" style="list-style-type: decimal">
+<li><strong>Réseau bipartite pondéré</strong> Un réseau bipartite peut
+contenir des informations sur l’abondance des espèces dans les sites, ou
+toute autre donnée quantitative.</li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Noeud1</th>
+<th align="left">Noeud2</th>
+<th align="right">Abondance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Site1</td>
+<td align="left">Espèce A</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">Site1</td>
+<td align="left">Espèce B</td>
+<td align="right">15</td>
+</tr>
+<tr class="odd">
+<td align="left">Site2</td>
+<td align="left">Espèce A</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Site2</td>
+<td align="left">Espèce C</td>
+<td align="right">11</td>
+</tr>
+</tbody>
+</table>
+<p>Il est possible de rechercher des clusters sur les deux types de
+réseaux ; cependant aujourd’hui nous allons nous concentrer uniquement
+sur les réseaux bipartites car c’est cette approche qui est plus
+novatrice en biogéographie.</p>
+</div>
+<div id="rechercher-les-clusters-sur-le-réseau" class="section level1">
+<h1>2. Rechercher les clusters sur le réseau</h1>
+<p>Les fichiers fishdb1 et fishdb2 sont déjà formatés comme il convient
+pour constituter des réseaux : chaque ligne représente l’occurrence
+d’une espèce dans un site - donc chaque ligne correspond à un lien entre
+espèce et site.</p>
+<p>A partir de là, vous pouvez rechercher les clusters sur la base du
+réseau en utilisant l’algorithme infomap avec la commande
+<code>netclu_infomap()</code>. Plusieurs éléments sont importants à
+configuer ici :</p>
+<ul>
+<li><p>Par défaut, <code>netclu_infomap()</code> attend un réseau
+pondéré. Il s’agit ici d’un réseau bipartite en occurrence, donc non
+pondéré. Argument <code>weight</code></p></li>
+<li><p>Il faut donner le chemin vers le dossier où vous avez installé
+les binaires dans les pré-requis. Dans mon cas c’est
+<code>binpath = &quot;c:/r&quot;</code></p></li>
+<li><p>Par défaut, <code>netclu_infomap()</code> attend un réseau
+unipartite. Il faut prévenir la fonction qu’il s’agit d’un réseau
+bipartite, avec l’argument <code>bipartite</code>. Ca lui permet de
+savoir que vous avez donc deux types de noeuds différents, cependant il
+faut lui préciser aussi quelle colonne contient les sites et quelle
+colonne contient les espèces avec les arguments <code>site_col</code> et
+<code>species_col</code>.</p></li>
+<li><p>infomap est un algorithme qui fonctionne de manière aléatoire. Il
+faut donc lui faire faire plusieurs répétitions pour obtenir un résultat
+qui ne soit pas le fruit d’un hasard pur. Utiliser l’argument
+<code>numtrials</code> pour lui demander de faire 100
+répétitions</p></li>
+<li><p><strong>Très important</strong> : les résultats d’infomap sont
+hiérarchiques ; cependant si vous n’affichez pas la hiérarchie (argument
+<code>show_hierarchy</code>), dans ce cas vous ne pouvez pas interpréter
+correctement les résultats du clustering. Faites la comparaison des
+résultats entre <code>show_hierarchy = TRUE</code> et
+<code>show_hierarchy = FALSE</code>, vous comprendrez l’importance de
+cet argument.</p></li>
+<li><p>Enfin, l’algorithme infomap peut être paramétré spécifiquement
+pour les réseaux bipartites, ou pas. A titre personnel, j’ai toujours
+utilisé infomap en mode non-bipartite, car cette option n’existait pas
+dans ses premières versions. Je trouve que les résultats sont moins
+pertinents d’un point de vue biologique quand cette option est activée,
+donc je ne la mets pas, mais je vous invite à découvrir cette option par
+vous-mêmes et à la tester sur vos jeux de données. Pour activer ou
+désactiver la version bipartite d’infomap, il faut utiliser l’argument
+<code>bipartite_version</code></p></li>
+</ul>
 <p>Créez le réseau biogéographique à partir de <code>fishdb1</code>
 écrivez le sur le disque dur dans un format lisible (format PAJEK) par
 map equation.</p>
@@ -417,31 +591,228 @@ noms des colonnes correspondant aux espèces et aux sites, et le nom du
 fichier pajek (extension .net). Taper ?writePajek pour connaître les
 arguments.</p>
 </div>
-<div id="appliquer-lalgorithme-de-clusterisation" class="section level1">
-<h1>3. Appliquer l’algorithme de clusterisation</h1>
-<p>Rechercher les régions avec Map Equation, que vous voulez les
-résultats sous forme d’arbre (<code>--tree</code>) et que vous voulez
-qu’il tourne 10 fois pour trouver la solution optimal
-(<code>-N 10</code>. Map Equation se lance en ligne de commande ; il est
-possible de le lancer depuis R avec la fonction <code>system()</code>.
-Si vous voulez connaître tous les arguments possibles de map equation,
-allez jeter un oeil <a href="https://www.mapequation.org/infomap/#Parameters">à leur site
-web</a></p>
-<pre class="r"><code># Structure de la commande :
-# &lt;chemin vers infomap&gt;       &lt;chemin vers le fichier du réseau biogéographique&gt;     &lt;chemin vers le dossier de sortie&gt;     &lt;arguments d&#39;infomap&gt; 
-# exemple :
-# &quot;c:/r/infomap                 c:/r/data/fishdb1.net                                   c:/r/data&quot;                          --tree -N 10
-
-system(&quot;./infomap ./data/fishdb1.net ./data/ --tree -N 10&quot;)</code></pre>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABhkAAAHWCAMAAABdSxjHAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAMAUExURQAAAA8PDxERER0dHSMjIy0tLTQ0NDs7O0BAQEdHR0tLS1dXV1xcXGlpaWxsbHp6en9/f4mJiYqKipiYmJubm6enp6qqqrW1tbm5ub+/v8PDw8jIyNDQ0NjY2N3d3ejo6Ozs7P///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHsnNbEAAAAJcEhZcwAADsMAAA7DAcdvqGQAAGOLSURBVHhe7Z0Lm6M20rZhCGHHS8wbh/XyhSXE//9PflWq0qFAcrunD2Y6z31dmcYWkkqnenQAp7oBAAAAKVAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMoCfkwqAZ6N98SsCZQA/Jzo2AXge2he/IlAG8HOiYxOA56F98SsCZQA/J197XILjA2UA4HhAGcBzgTIAcDygDOC5QBkAOB5QBvBcoAwAHA8oA3guUAYAjgeUATwXKAMAxwPKAJ4LlAGA4wFlAM8FygDA8YAygOcCZQDgeEAZwHOBMgBwPKAM4LlAGQA4HlAG8FygDAAcDygDeC5QBgCOB5QBPBcoAwDHA8oAnguUAYDjAWUAzwXKAMDxgDKA5wJlAOB4QBnAc4EyAHA8oAzguUAZADgeUAbwXKAMABwPKAN4LlAGAI7Hh4/Lv36pvunlz8lPX4CDA2UA4Hh8+Lj8XlV/6OXPyU9fgIMDZQDgeHz0uPxvVf1bLzP89fvv/9PLo3K/AB/Jn7///rdefmWgDAAcj5fH5Z+/VN+i+/6dInge8Jh//1L9cse9/bs6+k7NCwX4SL59tCb9PVTVb3r9PKgj6dVXBMoAfk5eHJfkParqT/3g9lYC3/W7O5CQ3FsUcGp6+Tb++vaINT/ACwX4SB6r4R/nf798dA4P8V5d4JhAGcBPyf97YVz+71e6YaMMv35XHth+r6r/6FWWP95r0vrnR/mXFwrwkdCC6iPzltUflOFjgTKAnxEWhnt9l70Ha4NRhvjhOHyYMnxVnOTTf1CGjwW9EvyEOGG403d/q6pvv/PQhTJ8Mf6i+vr+PxJ+KMPHgl4Jfj7+jwbl3XH5vfr+lxu6UIYvxp/Vtz/ckhDK8LGgV4KfDhWGO333d7fPTbc8pgy/8rM0v//C6wzH37/T3dX35NnLvwY5t2D4lOK/VTVICIfx3b/89l/9fBv4uaW/hl+q6ldNkPj7D7rr27/tBvw3SZHgh3n++kZp//3bt+oXTerP39zWyRCOkv8dj5X/IxbQNyHfv7/5B6b2Bch89Z9/U/bf/9g+wPS/37+zWTHgj/hexP++Vb/qpeKq7k+yufqelN/ZRNaQPAskgPq40l9cpm/fYz389ce/+UT518HffDe/v37j26AMHw6UAfxssDD865FxSbc8pgzkZ/52nl/czX+8w/7mnV34hmFvn7gmPtIQvqsvpazYvTl+1e/IxwnpwfX/9DuCUyP3+bvc5wTlb/L6ilehpBBqwW/JE6IkFuJH9wXYfyUFJryFCuuH4B/5pZy8wO1XOFxqssHhi0ZJcATy9+Gon26RMrgnxphfY+oeVYu7+Qla+OdSsO2LAGUAPxkiDO+tDBT8y/dvzt2Qg61+GX7/jWey4r7Yg//y++/sqX+VV9yia2K3SHe7NYU6WUqLvqUv+Tvx239TYpwm+Wf3Wfnjd47+O8H+mvzgQDf8+t15Rue6KTtnhzrdpBBqAS1eKu/ayT7nivcFyHxFN3/77Xde2JhqYV/86yBl/UW+uuup6W6y81eXkBcCVQYSgTDhp2K5bLm4VCZerejbFpzPb1RKVi5ZNUAZjsBXLhv4iqgwPDIu6RajDOSAfv/9TztFdtCN4tbYe/EZp3NxPBcW58hx+S9P6MWvBtfELlccIl+JA6fbdYrMKwcXgQLl/j82uyOp7+Pr6huZ/De7SMqdr+VK59N7ZeCZuc61/6bbOGKmAPuv6Jtvrib+/MXv4jj++qa7OqyGsrx4QRkoIWcAS437yisDZ6ppk365XKkapEx/kZxIZf3ym5SItVOWFVCGI/CVywa+ICwM/8cXD4xLusX7UXXXjn+Lc0/gb8W9E+Q7/eYNOSt2juRyxYvyNFicVnBNdIt3YywDzhNyVuqtfTDdHzZ2DDtl8MaxX/XWk9MNErVVBjJJt5PI7TrZ2Rcg8xXl5b8pQHFCWcuemr7QXadosCrDjby/1qrP39sjd1uNDuJ5Nz8hVP8zKdj2RfjKZQNfj3/RcHTC8GplIOcUULcdoK+Co/Ezb4Z8PTs08k8aHK68a6LJsIoGQX7PeULyjH7vn+5zU2P6m3fEqe/ja+8T2eMHm9iNOvebUQae24u9pB9csEwB8mXarF62UAZSCrq4qwxeU8k4qVivDJSVCBpvJnH+funAkLVWKyltWXPczU/whX8qBdu+CF+5bODLEYXh1crw95/sW//+0ylE/NqRfpO6TLpmB6R/0ivvmuKMnaCk3QfvGQk/EebjgLAqSUl9X3qdTLiJRHO2yhDC2P2zSFEqmQJsv+K7f7OT9g0hg7uemr7wFoVFhi9/EDQqvcufUgr6mKQqhLTv5icE255JwbYvwlcuG/hqJMLwamUI8GHBxq2kN5LT+YXPIxjydXwneTid6u52kxIRyH6pfth9V/2ye0LU+j7jB43xPkX6u1MGunBul0TI6VKmAJmv+LvKnyls+PtPvpHyChmUPXViZrgvlJ8unBJQnl7YvjsjiHAT8ecf9AXdJGnfzU+gW8S2Z1Kw7YvwlcsGvhb/LxWGR8Yl3ZJRBucTrUdMb+TQBOeAyIsVTqBT/xYWCMmXQRn0EVT3NH7KY8pAXtOlSCnvlIFn5pyqbiblCpArk375fVdD/+VnooRwY9lT0xeJRXJfKD9ViJNU3UzigBS56X9SMw73xd38BLpFbHsmBdu+CF+5bOBL4X4RIwjDI+OSbtn5PYLdjf0+/UIcZsDNeTkGP2tJf3TvyLsmowz/3X9JMb0L+1M84OaMI/V9xg/SdTTSr1VyyqD7Tn8n2/QpXIBcmUhS3JOi+ohQgKfuHsmAYpc9NX2RWCT3hfLzlhUpKdWLVNtGGdw5A6lHxN11Nz+BbvHV+jwKtn0RvnLZwFfCCcP/0w/EA+OSbrEKoOy+T7/IOZ04q/Uvs/m7jDJkvkyUgVzx7+yKbdaPKYNPkf76L6Odf7jtJPKw4uMzBciVifn7P79QNrEABCVW/fu/XMoQiS7KnjoxM9wXy08VRzJEYmOPphP4AP3X//CKIqR9Nz+hVKBPpWDbF+Erlw18IbbC8Mi4pFusGxbYGdnv0y/8aWkC+ac/Nr9t4V0TOb045/YfEgdIUVMXxm+vxRNrJvV9xg+Sz47LC/+BUvZfRucoTx6RE5ZnfTIFyHzlIZv1LQSBclLbQwZ04cu499RJ1dF9EjWWnzL+xW0miaDS0kfXKwHKX4sR0r6bnxAL/0QKtn0RvnLZwNfB/VRSKgxvUAbev9BLJb1x/6A9O7Tt8YB3TfHBTII8oPffBWVgV2ldWur7jB8kTx80JzyZSl/6lOnSp0SXf5A8qCGZAmS+8rCs6KXD55R4Xyqjz4lXFHqp0Bd3lMG9+0xl1pJQzW8VKmpdKP3d/AQow4fzlcsGvgzuxWcjDI+MS7olowz8sm3wuYK5kab13q8ppAzbBzy9a2Kf6x8uJTcm0+87yrD97Jy+XlplYP2S027n+mWlQdmqa+VgnxI7XPrPT8f3Bch95UnzJGKuQXrYLCm++1EndxWgL+4pAy0JBvpP31xgGdq0CN2r9RdU4G5+ApThw/nKZQNfBf+LGCkPjEu6Jfih7/6pIP4/v8TfABXSG3laHxzb/9wFe2/ml+/f/Q+qBtdEbk8nvezZxMlllEGfD+UnlDb7KSH+Rhl4X0feLna/WCfumi3hPORH7Lxz/JscKJXK68i+AJmv/v1dbo9aI3jZ/IsK4TOg5J0wcQm3tU5f3FMGKtIv4RdgncaGH/n7rys2FcT92hT/r5192vfyE6AMH85XLhv4IuSE4f64/J97ZJ5ucT+VxN+Qt+IfbpMf0/au2ENfJVNZ9rrfOCL/GrXzn+yyPfKrecE1ye/eDfKLcroUySgDBX7/3f2g3VaVSCu+Db//yndZZXATZo7Ef73Fzl+7zCjf4BydTsRdrX0B9l9RQmw1W+9dtYPXIvrjgSEDrkj6ju7l2+U7D31xTxlYaZIlmqutXwZqB7rH6QUvuqj88piUpn0vvxu/+sAvQ7gXNJJW+3z2tn0lvnLZwNcgKwz3x6U4Ng/7DzclFfzvP0foy9THJPc67+XOjZ1DYk/lpthBGW5/s7MWvDtMPKNXhmCQ/2nrgBMAucsqg/yP8B3xx7Sda+Vv/uNTZnhJEDa1iG0BMl/JfJzZyKRTGeIbJeoz8N8N+1qnL+4qg8s3ljmpLd0gYylysLt339zNz6/fhFADz4Dy16uvyFcuG/gSsDDE1xgCd8clzzoDMkv/3+/f2dP+Gv8HO5FfNzN5+X/xVN9/+49bINAHP+tl582ekNxm2BX60/229ff4PjF5Q58JOTKJ+l+5KfMW9P94vuxeOPtr+/+pcf9vnW8m0t88lf6F8qKb474UWWh+MnVTAGb71f/kd8P3b0H/lzP99fe/b9/iXP8/FPcb/yjqr9sj5KTqSGxEZZLy3/6iYhv/Lf83om/fh1BFXDO//MZPV4VlTzk/3jmLbJ90+lQof736ikAZwLExLz4nfN64/Iscl146H+znyOCfDZQBgKdREoZPHJfpvg3vm0MZAANlAOBZFIXhE8clb23rZnz8f+GAfzxQBgCeg/0NPcsnjkveoOcHm9z/pNI+ygP+uUAZAHgKm9/Qs3ziuEwfqPkFwgAE6g169RWBMoCjsvupJMPXHpfg+EAZAHgC/LRqWRigDODJQBkA+HxeEAYoA3gyUAYAPh334vMdYYAygCcDZQDgs8n/IkYKlAE8FygDAJ/My8IAZQBPBsoAwOfygDBAGcCTgTIA8KmwMJReYwhAGcBzgTIA8JncefE5AcoAnguUAYBP5DFhgDKAJwNlAODTuPdTSQYoA3guUAYAPou7P5VkgDKA5wJl+AjGqpr08kFyMXpqnHf63zo9mtTw6hp7IIb+rxhH/Rh5fQHfsUqewOPCwOMSgOeiffErUi5bI2Vvr/q5RPdKD+95rTIUYnTv5wYLSdkCfowydHqR4fUFfMcq+WTu/4aexfVOAJ6J9sWvyJ2yibsa6xek4R+mDB8ClMHBT6s+KgxQBvB8tC9+RV5Uhtv55P4UgTK8HSgD8yphAAB8II8qw9zRqD2pj7yeqqq9dLyY4MHM7J1REqOruoWinGYXsPR1VQ/rxs8PVXVuqvPSVY27baYIdb+4sCRGVbFVTcwwusHxRHedV75cKOsbZVnvzFopk7q/tO5DmgfhkzJ5uNIRLozTjTU20C2tOxuwBUxJYkxVNV2aqtnZRCm1VMImvziLBRzqimJzAfkwgVLlDT82NQY4YoykoYixqvcGPhUjA4+8+AwA+BReUob14hz1XA/LbR0b5wfnelxvy6DOuTClNjGmpr7c1r5m5zU3Lna7WwFU9bQ05Dd7lqKxZYc9SeZpDNWr4P3CxdhcFlKDXj9WIznE1X8KnNh7X1tX7DQPJiRl87AFnHyNre2F/+1dFmkBt4QYt66lHKe9XN0uXMJJVGZLsKrnI5+5bzmPtXZGzZXTiSSACTFsQ5F+BT09CP9KlADCAMBxuKcMPDGlmTxfd+wFySE17EvnxvkgnYoWlMHEmCp3rzvNbuX+y14ZKLQjVZhqmmpLFuRx6R8To6gMQnDDVe8dpeHkzJp4zWDyYEJSDynDWe/u2J+nBdySKgP/e5UFy56FCr7HWzWpuYNrEFnJOVmyAUQoh22oA64ZEi2AMABwIO4pg/OP04nmooubmxK9OFbepPCeN68MNsYUXe3s3d9eGegLvoM96cUfbpAq2BhFZVh5c6eW1QBRKBjfVYurTPNwhKQeUgbvZa98c1LAHYkyuJTi5y27KmF8mr06ftGPpSLFXSu2wQYQ0QrTUMcjUQO+fOxpVQDAx1P0UsE/8ux/4sWDI7q+ayuuMa8MNkbiOPUy4wZTZRh8PpS6jVFShrV1/v7iC3SnYLfFOdM0D/nrv3hIGfxfZ94nKAMf2wju44m+vrhcNwE7K3xDHQ9ntNODR198BgB8CkUvFZWB//oVQIo+tJRXBhsjcZwftWYYZY9m57izuMn24dYMK68Ddvg0w2aRwHtucoizCdhb8dLTZc+C1wmiCBAGAI7FHQfqlYEn2LKLpOhDNF4Z5NPWqZkYqeM0pwYpqTK8eM7Qeu8XHKd83/sC5Qum+uGU4cVzBs3DFjD4dXvOkBRwy8vKcJHDY1/hFp+mN9fTjFcxfBsQrbANdbhzBlWG6v8gDAAcjLwDdYijWoead7Tbnp3K5J7HqfiRF5q0isPu2+W2jM124mpipI6z/GwSfcF3OM85OjkY988mTXykPZ3CAz7BcfJvS1y7xhcoX7DBPVm69s6eNA8meFSbhy1g8Otry8+J6sNQb1OGtWuvXNHeEENIc+RquC0XXUJdWh+yCYgxbEMd7tkk0QUBwgDAkcg7UIYflmc68VdDW1VN73xMcz3TB/9yw3quq/qUeeByCDF4J3wij0if6ZN/O8E9ih/gJ6F6vpPvo9Ry7zO4GCNd9/zag8RxcO5Xyq4dJbJ73l+/N4wnfuvBP/uf5GGSSvMwBdR75HvzPkNawBR3O0HfczAVgO/d28UVuhcGa9VMplfdRWy/rXXYsEsCTAzbUEdbM/glAwNhAOBQlJUBgA+F95A8UAYADgWUATwJFQUBP4oBwJGAMoDnkG4mEZAGAA4ElAE8B1WEAKQBgOMAZQBPYbNkIDQAAPB8MB7BU9grA341CYDDAGUAT0HlIAUPKAFwFKAM4Blslwz/+j+cMwBwHKAM4BmkLzNU/4IqAHAsoAzgGagmkCpAFgA4HlAG8AR0M+lf/w+yAMARgTKAJ4DFAgCHBsoAPp//w2IBgEMDZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAM4JNY9O9Pwk9mLgDvyrsqw1IRev0Yr4+R0FSdXv0wa0/5txf99CCZfN9Ujk+jIyOf5PCWSxsqjeuqqhr9dBiGumoGvU7NPQ7cW9urfrjdplNd1bN+OCTr0FZVL9eHZO6qul/lmvrknTY/v0sx5hNlMvkPSeYc0Gpb9mf5+1zuuLPGDeC6f5UvmV7tH18fIzC8efS2vmVeRTbfN5Tjs+i84/ts1q6/xkqr/NA4FOd2ui2DG5TW3OPQnpbb3I/66dyMP9J5P5G56Q8tXLe5Jed2Oemne/5kepcp1VwP63qpRdzTzJeGvpsaqa33yeut3HNnrqKWoX5N//u5lGGtfmhsZfOFMtwnVtohlWGR4Xj2tr25b70/oyyzOumz7zOJ/UgW9XTHRabvpwfavAvy8RZkAPp2TDKXZcKomXRHaNoXlYG64GsWNz+XMvxg3tl8oQz3iZV2SGWYxLzJD8o39633Z5DmG9yiQe09MmHb5Kgs4qK9Q77T5ksVN/HegE5EnacwmUtVeRcyHmHRcM+daUW5PzPvUau49lU13C5N1WWmBNE/xhhuE36g8hL0OU2KyHrUruqWE93FOQwuFscmc6u2r5r5UlcsV0O3nuuwVzfUVdUM7ppzvFEC9d4VDg2lIQtyStixucnmYWLcxpb3CblGUqscuZITV95AvHTascanbgwfRRnOvPv8Q6u1j8Mrgz/+KHuJp+GVwYlX/y6u6iNZWr04LL7Na/fnXpuf/S1zX1fNmSfLk3Mc7GkmPsAb6nqcyCdKt57rym/67ZH8TOa9O+q8eomqXnny+RHk3LJHK4qtnuthua1jo8Udzh19HjOdM/hHE0NTOrGr3SSVVwYaofXltvaykyWTTHfjQC5laNp5Zg87tO2Zd15bvqvnszm9JqqRvPG6XZat7rR57fX7fN4mDxOjZ6m6tnI6mVhlLkwB53pcb8vg1Ye7kFw9g4MoQ93PfDZ5LGnQ3aSTb8UDKoPsQqyNs6yZrk1u5nMcxo5PzHPTx6MwShuHkVtu89b7bBnbtbtRhxP7galql6luruIt2IWUT7NXmWaazFeuptVNhJmuGPnz8JWSw1XU4oZwJwVeG1nmDLXOiHeEWjYx1orLLINvk1SMYZhk+SZPYqTKQBORiVPjZAbVVp5FTY14GjlDpDjZSenZe2jRpXzeJo80xlUaTMdmSRlMAWcxC2uG3bCTadJx4BPoK60W9eMBlYFPoMkr9dL7+nqkwbmd+hwImredFhozT+zwL6BtHEZuuc3DfE6GrzgZoww0zNkbDSIhd9YMayttZjO/Nm0Xh+fZW/RE7pngdltq3p9Z/EmtDmdd12bwtbyJ4abcZ661bVKxXQy61pLKSpWBvncXHDLo0n+hL/yjXouu+7KpasMGH5/P2+SRxjipydKoBWXYFHDi3aSDbJ3ErvcEtsNu+/npDA0/teqb83DmEbSGrtqrDA23mUmd7MB+V6bNi59uH4/H1wxBGRbeTdK5vQ4nUQa9eLHbeGGwmYs/OvlcBm/RE7lnQizlxBrhENtfVoZNjJm3hdxCY5tUiGF5TBm8gfQF7+0L4asM/lu/yZe9y+SRxvBHapJvQRl2BSSu/lHl5wJleJEjnzMosk6oxOGedbJyQAa3UXBb/Rb98fBewFtYbvNkLBOzbDn8iDLM/sTSZi57CrHzeafyRO6ZkJTSz4OVl5VhG6O7+Ie1NgExhuExZUjWDH4XyZNN9TPWDLsCMm659HQOpQzHfOqy91W0Nfc4NK7fncS+AyvDLAPkwMrAfoMILzSU29wqw+0q7ly+fI0yzHXYZDKZt66q9CtqVX/xRO6ZkJRysyn8gDJsYpAsqFpuAmIMQ0YZrnwj2+RiOGVIzhkWPWfw5Av22DlDmsdL5wzOKiZfcn6DhfDKgHMG0lpX96s/qrr75ulnM4Vz8aTzy1MoR0GPFvTEvJPTuq561VtHn4M8taHPAR+rEhVxA+G18qTNN/g34nXPOlWGNacMhXOGq7oDR5r5yf0bnub6KU6ghbV1G5qTP3ovNnLwj5sYt/qsfXcbkPfORhn4X37Rni7ZpuC1zbNJo3sldLnoFCVfsLV1xyYnna/m8zZ5mBjm2aTEKiZf8oqfTaIlo7pBPJtEDcXPd0x+u/WqG+bPZiUr0gemks5/PojbXahbha57O7fU9d3TfmT4Ed3ubeHHC0d90uQolWhw7+LFxWvS5hv8U6tdRX2XPLir7eFEJRq7nDLkn0266rRQPEWa+czbSbOsHIiDP7Uqv44h7Uplbauq6dl093oC4TfFIhqgIUOIwQz6dgAxxACNsEuLTw0mqm8JWeljO9In90rE4qYfXdXw08N9LWfkxHyqqT0u/IF/DYnJ6HbydoI/mtjcxV+FPOhz5n0G582iVXdK3lz54f3w9sY/dc2g1SO9yZ3ieVPOB1kyLNTKJ98T1Frt/O1B3O6V393xPenGbxTVOqauR3S7VKfJjwEdpRItMw3OuA1dVgb/pls/XNyodx+o7/ILVFXVsycZqdd0LAncafJrBvdIDyMf08zd7yZFL+G97hO5owzgq/HUNUOB5gij4C7Lbt5yOPqcHzoUP0El3lOGd/p1jAc5/K9jgC/GAZVhOfRPcTrGw7vdW3N4t/sTVOJdZfjMX7k7/i/qgS8GL3oPNkOf6qMvGW7D4X/l4fY+v+rzkfwMlXj3WYhPfJTu8L/CDQAA4B8JlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkA+HlY9C/4WSm24MGa9l2VYakIvX6M18dIaKpOr36Ytaf824t+8jxs1bWpqrpb9dNjjFU16eVn01GxjtD/qNqaQa8Pw9rXVTOGD1V1mvXDZzOeKlM/TaUfVgqRK2nLZzbndKqrWmtoHdqq6t3l0FT12V1NYuCPD+8PY2PuoOOXTL3jT84S4Y2kLXibu6ruNXMTECvRQR5DLvrkyw/nTruR1yPq/lWdb3p1R3h9jMDwZmVofctseciqa/1DPv55ynAMdzyeVnK9Wzl+Mmt7WkiyZOytLTXR1L5O8t+L04kyv7bBCwydtlt/Gq+hWz65Lc/NGGpnbnovomfyFuv5xJezDM43DO8PIjG3p3aeu1Y/3fMn07tosGnBuaUkL66ubEBSicxaDxr0PkY8yL12cxW1DPVrBsjPpQxrVSrbQ1adf0zD/+HKsDau0uXfwyB9aZGxN7iKujyzuhbfAed6ie0Wu+Vz2zKdQS9NWFwtMp7iF1SJwe8ehMTcSVxbWCne8SddcNRvJGlB5wZ4GuAIAdtKPJ1DUPcuC5fHCHZm0Ip6lf97yKMaXh8j8GZlKOf9kFU/ODr/4cowSvc+2KKhu8of1zaN04el5n+fRFAGarTDKcOUDjypMod+n9q226p9Nom5g3g2mQfwRdGfLJV0j7cTWnBp3J/RS04I2FQiyVcIGj9x0RB6WgatKPdn5n1N1be+qobbpam6ZGrgiV03xnDb9gNvl7kt9jQpIsZI6KpuOelW7+BicWwyt2r7qpkvdcWNOnTruQ57dUPN27PumnO8UQL1fvgMDaUhkwRK2JEbY7lyECPvrp4lP4m820edyFyqHL9RPFMx/I7c0lPsYRVlSMyltWNDN/np1drqLuh781RvEtCBOLzXLOw9WWXrXNu0ynTwT2Lyu0ncKbLKcKKOlRuBn0Gf+MklWRSolrbRLF2EHYfUXKXz4lVWhrOfJMx8GnXmyTKNc2oW9jQTH/oMdT1O5BNlQM915RciG0ILqgBMPuUQYCtxba5Jq1efp7MhzwxaUTy5m+thua2jX3cN544+jxkdDYUwMTSlE/f2TVJJsVOmpr7woaCraHGl7sah6tehaeeZh/DQtueFGsttCPctmaPXRDXSLHDdetjVTWHWXr/P583kyzE2l4UUx6da8LRd2y7U4i5w5M1EKg0388x7s8vQuuIYc08sgddW8+SzO7l6Z46hDL1YUR6GT0Q6hp+vS797AjR7URew8FFWThlOvMgZ032bT6SZrnx0667Hjo/rVaPcenBUUWMuMjM+DsZcxxjOk8pdsvXTGPEGtbtRm4V7yVS1y1Q3V/Ev7KZKp9mhBUe5IXyOTWsq8Uy3xaCuaOG7E/LM4CqKPBlVnMrqKstsmu+WxkwohImxutmXzB82SSXFTplk+cbu0yoDSf7EqXEyg46fgapy0n1rXSHeSEHkwnDWMdaJLuXzZvLlEGJYGLEGOdK68r+LWjXxAOFjTeLiupIx9+QymXQ688XXDGrFEZVBhdo38NOUgUadzpzcZCqnDELYi/hcqr4eyUbXS2l6xmf34mvXrqvPbjKkOPuPhDGXGf0TVve6ZNhXkJtl1BploI7D3khXwg+sGTSz8Dk2bVqJc01/Y9B50/4fyL2c3G6Le6hLD0Vo6KgrLroYX4hNDDcXc8ft26SSYqeYzbZUGeh7d8Ehg05IeI7nn+jym8PZVLVhyW1vmmVHvhy0XKEa8XP7ZMQaZCfTpaCPHjhVmP26kYtjzeV0a93p/kAK9n4yx10z+AXn09cMxOymUVc3gYjttu2w5Q78oeiD1+4Zn0Fmx4vr6W7yM8dnVmRKeCSMuUQiDI8oA28IN/o8szaLKINevNirQ4uV1wxpJbo1SAzyTyl9AvdyiqUMzyZrDb2sDJsYrpxuobFNKil2ymPK4A2kL/g0QAhfZfDf+k2+/F1Ethxr67z3xccqeNpEGUJF0XeapxRnay6xfPjjygV7P5mjnjOsYZfQd5OnujW3WPVHYd6ybYctd+APpZK2O4uJrpZWnuLoqldX5MR4tM0kYy7hdkQ8DyiDY5YCvk0ZiucMphK1/f1pzeGU4eZnzsrLyrCNQf1ce8kmoNC5X71m8LtInmyqr18zGHNHabMQ9rIyFNcMW3OZD59gHUMZdLIkO2jHYW3jFl7jWjA02FNIGitebjvs9Tme9yRN6JRhltHpXK0OK10VEofbTDLmxlWi8Kgy3K4utjYLJ+jaxY3rYhJKaEFdmAYPEQJ2lZi0+lF2k2Ip/daP8oAybGKQLOgTQZuApNgpGWVwr4JYZUjOGfyOvidfsNefM6TmaoX0PiwZvCmJMhTPGYy5qjheGb74OcPKW6f6L3H3zdPPY26TypEddP+4Nq0bP7/i5mSaENstdEtd3/iQroo7OJ+APnHUuX/l1H7if2fpyOHRJX0Mj3lKJeZIzF1PJ1NrZbfeaogu61NlcGV07ZIowwPnDOqD5CSVCAHbSjRxPm+shDwzJBVFEyruqJM/ei82cijEJsatPmvf3QbEYqcYZeB/+ZV2urTKkD6bNLq3MpeLTvTyBVtbd2zi9w3yeTPZcizc3Neu8WF+XG5IlIGcPn+QZ0jMs0mpuYN7PHfttb55B0uu3pmCvZ/Nldpr9TsOV92zfjJLLfZI27lZDJvpOH+q252bgTrDmP48Qmy30C1n3uxeTmri+tlulw9IZ10QLPwU4ShPaPT86M4l+A3xoI7PrcQ7JObqKjF4s7Iy+KdWu4oKeFtkFjGwroxdThkeeDaJJofUzvGVwRiwqcQ06BhPrcqvY7gGJ4a2qpqex417PYHYL2Q1QEOGEIMZ3BsIjiEGaIRdWrwNP1GNSMhKH9uRPrlXIhY3/eiqhp8eljcEXJz5VFN7XPgD/xoSo94nJXmfwe/17+7S7/fluNKlGMLNld4U4e+pVTlxTjj3PoPrNYm544nfk/AvN5AYfek1A6tipY6YPUZhCH0uvjVVplZ+WUCb49Z+rttdztzL4oyRe5LrD6a/uocW/PN31093uxfK3Q9ofvPIv8LAVun7PkTyqvQnV+Idorlan8GysjL4N9364eJ8kftAfZcHLbWODHYe1yQJPNYLawbTgrQ4qLxTtAG2El3XFAdylDfdwBfjKMqQ0nxiZ/8xlp34H44+64eOxE9QifeU4f1+HeNNHOXXMcAX44DKsHzQ8ugdGQ/vdm/N4d3uT1CJd5XhU3/MrsRhflEPfDF4zXqwGfrkD6KPyyAngkfm3X7V58P4GSpRdnkLvM+vcL+No/wKNwAAgH8kUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAn8Sif8GX49ObFn1px3tXybsqw1IRev0Yr4/xMQxVNemlMASrerJw0GuhqTq92lAMOAgdFeVJY2q5tKFuuM2rqtFPz4Ma3ZFvtP4DGnM5N1V1muXDfKqqVq9TJrGql09DU9VnuXQxuqSfNpuO+T6sQ+tzv1Lm/eouU7gfMZL7Op7iEN6amyvgW5nPTSz3UFftVa9TyKjK32aqvRhABbrT4mdtj0+m3BkMxSqZu9iCaffps8mk3HHLVGlE3b/Kl0yv9vOvj/EhFJWB6GKtO4ZSDyoGHINtOT6NteuvsW42Vf00LlId+Uab6vO7N+Zcj8ttGWo3opaGRu/U7D2nGRBnGn7r+eSu53pY10sd/ODQfUSDzk3vbbrWI/v9nTScpAEl9/40XoPFqbnFAr6NqTvPsdw9XS0Z+TmxjdfW+T9T7cUA4s7wnZ40pSp2hpRylcwtmX3JdJ+Xy3PPLbuKoorbTxrKfBVlMGwHYLEH3elaR+AjHMnDxLo5ijIop9z0aW0SKXtneOj6WduYGefJgFgqN/jEvUrzjX6xNdfLBzTokrjyZuR/r6VMgkYFi425xQK+nVDuybXRXGqpJfUtUu1CPuBOi3cfUYwHKHaGLfkqkSWCKLntPt1La6C0hrZoRZ1zI6cElOHAfIAjeZxYN8dShrXKjTSy9sMaUzyRDNpM70+/kmGuDSeOIQxZ+vIDGjTdrdKcCvt+11ovosXG3GIB304od++0q+As31EZliqs1D6XYmfYkq2SRZpO1Nl2n/GlRcO9dtOKcn9m3lvUVWTPO4yXpuoy7RFLEmO4w4SBbCHoc5oUUeg646mu6jMXhjf66R7e3GJLhpr3CV0pOeHbcqpqVysxBoVQpOY6yelBEsOy9pRod3Wryera1xTFfb89/YhtMba8VZfpQWmAKeBIWfRrx6Zbc1OrbJWsrd9XfGfyfeqTiJVWnXkjO9MeTyHMwVNoPv5RyrDq7kV/4X+vuTUDbydLUy3ifdPtkkkd8qX9iAZdKNWAjoGCD+lDJw1D2JhbLODbCeVWHetcVjsm2TRy+Gp3FALKLX72KjixyzhxBHVn6p34SCbsvNPltJ5r6eMxhsuLW1ZOaNIY3OMqcemWFzpDJFslqiW+yzDhusrXWSB1gFu0oriF53pYbusoy0sKOXf0eczoaOgkJoam5Nbtm6QKyjA2l4W8qOt8a+0KOzvR6/lwZe5bdSzV2F3Jw9NVGmNpyGa6dtluYkScJbdr6+Sjqsmgif9xGKtCrfd8WnVt42GqJw0wBTx3lMXYter1o7mpVZsq4VMnuXpnDqIMdT/zMeeuPZ6D9JgNLdXUhygD+RPe+iVWnlit/vgzwfUG7ci30XXtZNW+ttJLFh4U79+gY7eSr9M5n3TIS2GNF8ZKMlhSc4sFfDuh3I2Ylq0HcrzB+cVqJ4oB5RZvVd+W+sx9VyYTmqvbVBvrcb0tg1+8dJeWPp8pZROjpYnrOvSuujYxBpn3brnfGRKyVTJKkokz892Hbnihe99zQa6iFjeEVZTXRmpxEF+dIRhhYsiKfXGTj01S1gdv0DA5dHFzlKkRhzJo/WznnhJD82i4ANsYEW+JM0s6y9VPmYxVvtavUpmrSzfFBKQF1MxHP7iCucaqTZV89TWDIFPK5xNPdCM8H/8YZeC+0knTX5v23hGyuIy16+pz9F3UN7RruFnW+zfo0LY0v72KNPAJ9Hxq/bTGIhM1RxwsxtwXCvgGQqo6rvK5kNsN4hWrnSgFlFt88xCYZCvbaW7Nudbi4Cf1H13SZA4XYxB9ccqwjVFYMyj5zpCSrRItUNI+vvuQU009XIZ7we6pvpo3PPTsIwznIdsSjDdiE8N5defgt0lZHxwglaW8WwlzkiLq4p+20pVVYn8SY9VvL1wx2xgBs9eoFRqMMVb5Wj+pybselAaYAp41plfSkGpq1a5KPor8APoktpVWHoafStwtjyxu1H6YgTIDlNnEqdgk0ljOK8/hIZAwsq9uZvH+DTrIzHURH0br6bpf06OHSPKMTBwsqbkvFfANhHLfWzMQc7oRli4O8wHlFg/KwLvGVafe1+lLy4N29DNKXQIkVZbEUImdubq2Me6T7QyGbJVs1wyJMNinLzPcC44VpU/VEpL/y8qwieGK49zjNqlodsradjyVu2gYdy/n5sOj1H6/JUROYwQjOMo2RsBm/Igy+Pbe9aA0wBRwGzOkmlq1q5KPIvSeZ7CttPIw/FTibnnEN0juBOIdkK1e111p7cj/5nCNpTPKTqeTc9gL8O9iZKx/E4Ocx6+pXqZeNJJMu+OoSc19qYBvIHRkHVe66N6TBqS77fmAcpf0I7NvRnJksyoDuyRx1L45/GtRURnSGBrovMA2xn1yncGSrZLNOUPsPsT7KIM/1/a8rAzbGGSoHvVtAmKMFFVUH8ZFk5643RMKkdMYZs2w30VSnHQHpIFiH08Dfa0/tGYwBSyuGYxV2yr5KELveQbbSnvSq0NbcptJQtlPvBHpWzKBtAvXFDeKdZtSn56Z49a+8P4Nqk4vVQadeG5INpPiYDHmvlTANxDKrRWjOzN70grKDmkmBJRbXJXBr+7Vm/OOkMws/J6QJyiDiZGuGbYx7pPpDBuyVaKVH15oSLvPm3aTYkVt9jkeUIZNDJIFFaztlolpMI9mLWc1RDNeRVcW3Z/3hMgmhsiqbPtvY0TcOpBwdfmIMmjTvHDOkBZQZ0zhEC+kaqzaVMkXP2eQ/qmPFVCV3Hvz9MOJL2lxtRtLgsG0hHjXiju5gXpykhSeBeorPWWaxc1Nbi46S3Dv7r3qo3OR0KBdld9jeD3q6WIHXP12x1yn1ZC+BxgGizHXFvBdKzGUW8ZXOB0MlajM6RPJUu1CPiBxeBv0mRMtaDg27Hs5pNztCQVlMDEGqVV5ZXwTI3/OUO4MLkZSo/kqEUcob0Rvus+bT6CFtXUvRk7qTB9Qhk2MW33WvrsNMD7Ys3A1XbvGh11aX/LRrc6Wi05qQmQTY+EFxtKdXAE2MSJzfVn5kSD3lMwjyvDYs0mmgGd+Xu0SDvFiqqlVmyrhzQx38d6EcjyD0JtGftxiChvmjy2nPwqzW25NCQaf38vt9t11vS0neUpy5t2W2XcM/m0GbZ0zP7Qy6vyu56fWZCP1qjPjpG/4Bl3fz+0u9YXHhDNxomKPwYPx/odeEn74MnGwJOZuCvhulcjEjswrzzk8xxkqcW4G+m6Un5JIq70YwJSVwT+12pzX29w3vp/MlRdISpdSWX0bxd0kE6MdyOGcRRk2Mah2c7mXOgNh2yNfJe69RVmdb7vPG55abSjn+Ds7Q1tVTc/lc0/7EzIdTtEADRlCDGaowv7JEAM0wj6tK93TjjRYpU7WOixe51NNlUg+nWpKY7t7TAx9n0G7aIxhWXoO4Pu5lqn+ePefPrpECbYq7Ae6TPS1hb03MwFDLCCNLPc+A38w5lqrhiQGCcWXWzNoyaU3cbWHn3k5P3XJ4BeyjF0zcLtrr2zfze26V27Sn7EJwpBOdycO8PM791M5Lkboie57gnurdJTrO7rdhXNX/0ZXcdiYOaqfK4sVjFRkNHdTwHerRBZwRhvnTH1JrCViJS78zoyvxLTaiwFEWRn8m25cpGYgIdYB2oU34Ny7US0/p8pPwjrcPSaGf5+BA9IYROnZpEJnIGJ73KmSmUorjnfTfd70pttPjyrDAYhziGfy1DVDgealHvp0lv285Wj0ea9yIH6CSrynDO/76xhHcLpv+nWMnx59fvj5+IeXn8wBlWH5oOXROzIe3u3emsO73Z+gEu8qw3v+op55SOpJvO0X9X52rptDnqex5B6NfAK88D/YDH1KfrPgoAz+fPO4POtXfR7nZ6jE6t7G5vs9SmeeHX0W/n2qMl9VGfiQJP8DI58Mbzrmf1MdAPDPgo8akxdBjsyX3k0CAADwA0AZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBvBm1lUvnsFTMweORf/uKAaAo/OuyrBUhF4/xutjCE3V6VXgR5NyDFU16WWGa1NVdfdOHmjMZNWT6YNefyAdZaNjlYrUZHNMAtZLW1XtVT5MfV3VvdbBSgafZrm+Xfs6KdDSU2WNfLVSjMZdOYoBBUweCcYqk/lM5fMxjLlXitFrwbmXVFXjrqnVGTEltcrmUYQyDHlsmE6Uv7NlPFF2vqqpdk0lah7cMIzclgTYGLehTq2KeZSxMRLSgLQcJXMnsbB3H0yMlaLIFVEMKFKsRBNQMvcdA6h0O6cSOWvJ30iaeUq5zW/rwN3XXQ4UMLgAbQ7v8WKAg3yMXGjHkr4/U9N2Olr6s/wtc6fpaCATtR9SjzE90Bcsr4/BDLlGfG1SU5LIHWW4pp7vHchm1WX99PsS8xhPK3XGi35KSAPqYabRXbv+emmvK3Wt1gWsLZVgal1PvHSXJSnQ2Ay+v7SX9bZ0Po8YsLanhTr/C10zzcNgrEozX3hsXEUajLljPd6Wcy3Zp5VvOlFqbppHmbmlJC8n/WQ4N6NafjpRhtdWSnslS8hfShBXw9w7LeJ7CG2fJMDG6Cl8ab0WxDzK2BgJaUBajqK5ZmylMfrTeA1hxYAixUo0ASVz3zOg4FSEyU+p3kaauaHY5re56f39PY2JuXOdehZTtVWSAGatB6341KvMND7Wi3bql8tzr+lcRS1D/WL/S/iKynB+UV9fx/OVYW1cm8q/KZmAMa3pxpk+uHQuweJYoGt05aPrqEvtPqQB0nTLC11zm8eGaFXIvHfzqnVn7irCLsFFZbDmOkzJM8j8S726YTfBXKRnyprk6go1yrolXYrKqDUBaQzpruoTHprE2hgJJmBfjoy5ZmxtYsSwYkCRYiWmAUVz3zGAuKMMXZCPt2AyTym2+W1pgo5M4on9wpa5uF67DTidfcWnXkWuNadb91L3udd0WlGvcoyvdc4/EoP5TGV4b6f9fGUYpVvsFw2ZgIwyNM6pRy8aCqTC4hDXrmFpQCezFhmVRbZ5bMgogybYJYrjzJ1kLqWNnVZ+2omMucILyrDIGBv3PiPtV4K6Wu2fLqJmOMRxfpXCmoA0hk4pxVXs88hgYqSkAZlyZMxNx9Y2RggrBhQpVqIJKJr7jgFEWRmW6oX142OkmRuKbZ4Ok0Ecsd7raN1A3QSQUPiKT71KJUNQQ8aXFg33mk4ryv2ZecdKxbXnDdFLU3W7AqZ9IcZwJwADb365LfY0KaLQe1belu6usgcw0HUrtUqTO94tE9uKSSUBXdUtJ/ogxi5kfHOd2BDdZdYtuerK+8yZ9teb5C7eqtP9NS7VjVKuk8onKNVzU52XrpL2T2JQ5jVvB3IlyJ4mFcvHjm041LzTK824Ulp1LzMD+tT6fd4fI+ThO6IfEoF9QLqnsuj2jFZz5ds/uNMxmUTIeFvF26UBwvrCDvk2D0tiVcjcK4P2k2iuoGWqzrxrK7U7tLHNjbmOl3aT1DdPe/HqtxEn3Z7xheLu4Ks6tqiuakxAGsMX0HmDXR45TIyUNGBfjpy5U+X2st0X2xhh3BUDihQr0QQUzX3HAKKsDGd/y8w95syTZfIhVBvsBSbezh/qepzIJ0rPmms9vbKkmRuKbb6kXVhIYtuFtwas1KN9xXcnPltIx1AobLUzwnKv6bSieAI518NyW0e/XhnOHX0eM50z9AUTQ1M6cYfbJFXoPe4uPjqkulydMq4ycHp28de25RSLSZmAqakvFNutuJaGklpOvXaJpCdUNd088T87otMeeV+SEtSqrkaa/65xaAtVPS1NM5Cl9CGNMfPG8DK4MvkqCWmHi54PouZedl9OUlotFx87ydWPEfPQjpiUX9gEUL+PZyykqeJRdUYZfXK46AeWZPW7boJ0lgo1AQ51gyV2eSQYq5LMXYqz19pgrjBro9X9zGd6LuTCDTLplCM1d5tHFl1SZPpvM/EZoq9s1n8dhdIhL85kWdavTWwD7XwmII0hCzZtxU0eeUyMlDRgW468uW5I0cjhb7YxwkUxoEixEk1A0dx3DCD248HT+qmSOJba3ejSkA44Ve0y1c1VXBWlJDO/LWnmhmKbjx2fTae+fUzO3i6yrhB8wJkS8UU68QJ9TNYoq59g37piYQVfKTlcRZEnowyDHIlGDcVRE2rZxFjd1E8UbpNUjGHwd3GUs1YkzwavUh6pw2JSJmCSlaA7+dcAHY5GGVzIdS/RFMk35KJ7IpM2iHE9Ac6OtyVZnU0MPlMlpMlLyjBpDFkhnpxVuh/yfmsGvdiPhF3A3MduRVLrjPLV7MphLroTn3JRb+YPc9s1vZ6jmQBGla/ILg9DalW4g0+gl6E++UJ6cx2z1fx0u0x3rFJzmTSPLFpJmf5b9ZTbElcDyyCD3Z0tzqdWOkJ7WsjH6CSFmHW5bwLSGFpSaaNtHllMjJQ0YFeOvLmCq5NtjHBRDChSrEQTUDT3HQMI/ZwhLO1lpSuD06UhKU7cduxCdGVaWDOkmVtKbT60fDZ9jdIwpmttN9VWfMDM2yyhSI6wXUYeJHSYs7llz71gt91Cw436iu+0OqJ08ZPBm7SJ4eZzZzZwm9SmEIqfMjp8XbAqiKskC+i6mJQNUP/PzbHqDRf5yiiDa7SsMaEhw1MMOlZyN0tKHIXTSmPMYR3nmjxaZS7842Tir1ZewuvG/NsJmT26ZmDSecnqXEZ5zdDJCBq52kUUtabTAOYlYdjnsSFaFe/gjbvTnPRNMZfZCIMtuUvBmCuYGdme7Ywzos8lh2dK2OvL5IWWf3W/yqYCPybbXmMfdMODMQFJDDPj3OeRoThHvTdzJnLmCtkY4aIYUKRYiSagaO47BhD78eAJysAbwo3uTLs0pPu4JPiinASTZm4ptfkga4/F9w0jDDLhFkKAW7WEIjnCp0QYKGW9KHAvOJYyPD2rNfSyMmxizLyX4xYa26Si2SnmS3/N9eZ7KdtWTMoGaHVzc4Qb5Cv945CBljUmNGQotlqRu1lS8pmlMUJuLiut3JC2v+ADEkE+E8vLDx8/xrYgj5wzkLlJX5QANW1/ztDJgufKd+mxmPiYNIA6qGxK3GWbx5Z95ko8Z4jluG6n/2YAS3uk5irFzB2+E3nBj1SS7dnrIKGLVSHNJM76g4wJZjngYmivk6QyeewxMVLSgFw5iua6LrSNEUZNMaBIsRJNQNHcdwwgym7dexhhlj6mw4m7jysoX5STYNLMc+zbfJA+6M+/dBtU8c8ZETFAvUfaaL4Z5rCVRLyPMvhzbc/LyrCNQZWh5dgE5HvPnH5ZWjOUkzIB2v7cjj/BmkE9lCGdG7yFkJlOlnxlRnIBUjOCWC1Tn1CeeMdFasQJgO4Byr1pgJm5FNnmsSXkmZpHLOlD1lrJZqLlSB/5dDuW1lxlk/QGXdbEx+EDJ8nWKIOvekIrWQgZhs0kJbVEYuiCTgqTyWOPiZGSBuTKUTTX+ZZtjDBqigFFipVoAormvmMAkTi8DVYZ9CkyrSTuJa6gfFFOgkkzz7Fv81n6oCrDZqkdN5O2a3Bb8VfxvHbh/KbdpFhKv1+jPKAMmxgkC/6kb9OX871HT3JcXRbPGYpJmYBEGXRC6Y/9dP/eqau0QNaYMEx25wzyZwOnxFE4rRfPGVqfts/Ex3DIQ/ZBGd7tnGF1j3zJv8RY+cdwNgHMJXHOKx/gk+3Oivg0s9QdI/Ne9/DdRYK1OEnAHMrsyJ/VbfKgktu7olUxc0e6ZPDmJq8WyeCQVxwuMpykJay5Dp8HLUGNxR7Jyr+5OtfhLn1kJHl+dk60fU0XMHGWyAeHCen0UWNIt9OjMJtHV6WCGDAxaFhU4UQuDbDlYPbmzuLN9Mn5TYw4aooBr6/ENKBo7jsGEGW37h54IXT1niqDe9TQFZQvNInCOYPJPG0PIdPm+lzFxP+up+QYjHA5u4tNgNpD0iEJiqFX++Tlm0+gBZrmsaGTP3rPNjIT+sImxq0+a9/dBiS9J2GuLyufIfLgXVt31iHFTJ9NKiZlAlJlWNhDLZ1OuBY+M5p65wellrPGBIdKnprvCmf9+crjlDiKSyuNYZ5NmrhTTKfwdEnIZHSvti7OLQ3uYdvVn1LyLplc/RixIPzi2Srjguiid04CyJDltg5yft/0ZPTUap9mkU/eXfM9lL4kl0sl5EtKhUqrs6QkYNGZi66sr7phvsPkwSWX24xVTIg+c4Xq9CM19yyJSDcY+eGSSRYta0c+YR3E56XmbvI4590udSaKGVYffCqnl5TlcpvlSbxmoJvGWjzKROn43rPQH+3TDt+JbUAaw+U1e5mLeZDxBbdrY/BGg78tDUjKUTb3XFP98NvkjC15MmqKAa+vRBPAfzPmvmuAcXgb/FOrXUXd57bI3GZgfzx23AFdQflCkyg8m2QyT9uj3OYLP1g5OgXRpXZwvvr+yz4gVPzMRyLLyQ2Aq65UfP36B9BKxKbb0ZDhcbtqaKvKjTfyp4LTP4MG+F+lCTGYoZLeRgwxQCNk0uKjnsr7rsz7DOIphlJSQwjgjfvJuRYO0fcZtNkmuqs9UxG5R1L18r2ajYcjMpJs8nYCJeTY3C8pUUIck8Jy7zO4XjPyD/vwaw8Sx+HSmk9cchJGuuc00gf/cgMJ3jutGbjnucd0hbhmMAETv1Kip23rhYoUfk9n5aekxShvu+/VVKM6gXE/RBS6XwjwFaoe/ZwfQiYPV3J/W2qVyZw+NNyWTGouNyojCbgjRF8O7kualDE3zYMGXsHt0hivYq9Opru03KBalJCF35/ws1IyhX+Ew3Hl9pc6YGRPizEBaQx2UPqWDBPzIHnNu91NjHSOmgYk5SiaS7OYGJDG8NUrnaYY8PpKNAEFc9814I4y+Dfd+oE7lndFZ+5jNJx7LupIHqjjTshVXFgz2MyT9rjT5vwylmiJVKdVd4d+HwLcEHMpuydY5AnK4GT4A4/50BXy3FGGL0x6wPAPIlGGw9C81EOfzpKZtxyMvuCHjsNPUIn3lOGdfh3jQLzp1zG+LvuHcv4RHFAZlretgj6D8fBu99Yc3u3+BJV4Vxne6Rf1DsPbflHvy7J7iPEfAi96D9bBp/Sw+5gM/sDwuMRTl6PyM1Si33DMEk8jvgRv+hXurwmfnoQjIAAAAHv+mbtJAAAAykAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwDKuurF4yz698d4W+x/MMWKQ40y71EL76oMS0Xo9WO8PobQVJ1eBX40KcdQVZNeZrg2VVV3D7uNngwZ9PoeK9/YXvTTg2RK/jAd5aedhorUZG1MA9jA06wfPiigiImR8lAea19XzSjXt2tbVb0W3ARQr+mpbeXjta/TPtC/XNHzuVCMoanqs14To++Yy5lyCyaOp9hfOcagPYzL0V7dJbcYE7IJSWnIyz4gxEiZJHavH2/Tqa5qZ1eSuavduo/9PiYVC6gp+ZBCOe4wdyaPSBown6qq861jq30duHXdZTkgJLUxl2h85dKXd1r8HOrqbSRWbcj2EtNQps3TKin3q7Rp0xh90j3zpGlsoMyI2g+px5juJJjn9TGYIdeIr01qShK5owxX4zEeost7DEubHRAvkS35Y0SrxtNKAzcjSmnA2lK5p1aM/KCAIiZGymN5tJf1tnQSMNYjjZ1a+nEaQEHNoN370l2WtA9M9fmFip6685xv5zONmfV80k+3tR6kY871uNyWQSzpT+M19NeebJ+7Vj60p+U2906uTmJRyCYk9VgPI2KMlM1IOTejr+gkc+r4I/sZHxSTSgo4Sy1pgqVylJlbqo1LqKtIGjCT2qyX2qnMptrnplePWAxIk7LmEkMX49wZWtMDGvwIiVUb8r3ENFTa5mmVlPtV2rRpjAfKk2a8xVUUZeh7xiO81jn/SAzmM5Xh/KK+7nhk3K7Vayo28B7KsDYua/k3xQQM7vaL+/ejAoqkMQwP5TE657TU/O8qwt67eVcawIsJY0TSB9bm+khFZ9t5kYZtvAs4nW3H7H2k8PUkY0zWMmPD/97SNaoO5zSpR3oYs81csN8l82GTudhz9TmFpLYFJC6uXl8qRwaZxKoCpqQBUlhNkIiFX1IjSgH7PMRcYq6XGOdOi3cZ7foBNuam5HuJ+S5t822VEPt+ZZrWxuiy65YEY8wGrahXOUZbukd4fQzmM5UhbZAHeSTKjxX8XZRhlG6xn7ebgMZNK8SLflRAkTSG4aE8RCWkUSfxAtLYaYAXlkDSB6iWH6nobDtrt/Jh5C5tU+9H8CBDTIxTE4c42b76WkiSerBT7jIXzHfpMDCZ603qS2JSmwIysin6QjkyLJL4uHO8JkDnUMHomLPfHVGyAZk8wh4uRYhxyi2+VC/uij3ExtyEQi8x36UVvq0SIqMMxsOZGONLiwZjzAatKPdn5j0uVd2e9z0vTdVl9C8aFWO4E4CB99Hcbn6aFGHrI7DyBnB3lRXSQNet9rCx5d0ysa2YVBLQVd1yog9i7ELGN9eJDRnYHsYFVFfegM60v94kd/FWne6vcalulHKdNFcg6W01Zag7r8uZbOc9D8Lnvo1tzX2s5FeK0F46NX7UbcU9wSo/aHfj0QRobVac2kcFFEljGB7KQ7zAmuqK3GQCxs2cJyoDTSV/XBlUzloxnVYfpo+vuuontl1fNrl8oUT1GFnu2KS6E+8a72pnwzZzz1S5AwH50Ce93mTua9TZmyRlC8gsxs+UypFBXdeUtpQjExCvQ7Uvfu6vZAP2SQVzee2QjNVii5993Jm9xJkny+RDKCJ7gYkPAIa6HifyiTLS51oPryxbcyOlXmIaat/mSZmy/SptWiHEqLw4Fsj0moBWFM/I5npYbuvoj+6Gc0efx4wfDUaZGJrSiUfiJilTHxF3Fx8d0mBdncKvMj569pnXtuUUi0mZgKmpLxTbLXSXhpJaTr32laQnVDXdPPE/O2LXGXnDkhLUxqlG8sZrrueHKD0fwc297Fo03FCjb8B8wY25j5V8rsf1tgxeZLibytWWaJVc7EdCGrCofc5fflBAERMj5bE8bm57+5y05qyNlgb0AwtsPO2JmbWU8H0Dhdg1UtxSxssOH1fEpqbpketDjk0PGKWXyHp/bWL2vlemSZ14IjCWNycEm3nE9R8aB+5DM/FJs5TEZC7d6yLVkiZlCshcZFouFMuRYZTQvY37gNXPkJJqHzs+5o7OMhuwT8qbu/BGY2zDcou3fhoj4652N2pErp6JWnWqm6sMWEqJ8nYXlq25kVIvMQ21a/NYJYV+lTatI8boioUVdi2SIANu4HbWI7tVVuw0EQ5jaEMwysRY3UROlHqTVNpgCf4ujnLWknVUqKuUR/pbMSkTMMlK0D0loQHaW40yuJBrTtRD11l092HSjpU4lQ0+yqQxdJntCGH5uk/Nfazks2TyijWDXuxHQhrg7XOO4YMCipgYKY/lcZvbrunD2SmPMB0RaUB34kM5Gq7uU5KZ24a+b6CgBmxYu64+h6FNf71tzLUL+aVfU7v5ZmtPCzkfnb0Qs+4D7JKiON5j5cnEMIiTqXqqnEXn9mnmfAI9n1q3yjVJpQV0uDmfUixHDq3kvY27gLUVA5lQ7UPLx9zX4GuzAfs8vLnub2zDcouHuZaUTYazRuReM3ETsQvRlXBhzbA1N3CvlzDpDCC2eVol+X5lmpZIYpx3VW65F+w2PNwzaHrkRLMs8Ui6UMzgjdrEcLNe9zDDNilTHwE/AXT4nsa+8aSxuBGLSdkA9f/cjqvecNG+kvQE8QpZY0LXCY9Q6I5Q7mbBR/EPh8n6e6LFYNV6Cc/mZcx9tOSc7iMPOoWCFKftb1sBvD6giImR8lgeouHazEQQBhPQyYAftWZDZour9/sGCqFGDepKXYO4SaRtap0Bbr4ODpUXjFV7jZ3TP+WUSarQhzyZGAYxX5/YlodmTOa0Zq/71W2Om6TSAjIy8xPK5cjx8JrBeMFQ7YNMzRc/MLMBuzy8uVfXGWIblls8KMPCu0m61asRufZc2nxxv9NszQ3c6yVMtLFUJUSmX5mmtTFyj6yl3AuOpQxPAWsNvawMmxiuF7mFxjappBgJ5kt/zX3MH+GwbcWkbEDiasMN8lXaaaUKs8bE7uYv1IrczYKPwqcBAn0YeWV4W3ingsnmFYxyKfg7Xiw5cU22fQtsC7Lf6jcBmvv9Hf03BhRJYxgey0MU2W8nX8OcywR0sti6ekukD8TqTbdI8oQaTdEjb17oUZpKMsEOW71pD3BL85Q40fO7pZqSSSpJIYNGSGMYxPxKyn9m76SYwwEXXVNy16aATPKIzJ1y5PAjMe6XK5uAOW4lEbEjS/8IB0rZgF0e3lx/1uctfEAZHLOUXDN7lTJYcwNqSLaXMGk/821uq4TI9CvbtCbG+yiDP9f26IjMEIzaxOguvj02AfnOPadflmbO5aRMQOJqP33NkO4i3RrZ7vFh2byMuY+XnIkP0JcIBdFZlE8yYgIaV8rZ9bePCiiSxjA8lIduw8lXyTTWBlykBXbKINwf5EKo0RTd99MFDWObOnxKvtaTqAS1nUpke7NJ6vqyeJX6GSOe4iT2psoQMie0khlNalfAuJl0pxxZdKW3f6HBBoQ1nxCqfZYm2ytDGrDLI937Stuw3OJWGfRhMY3IObmK4Yv7nWZrrsU2lPmUunRt802VECFGjGqa1sZ4025SLKXfr1EeUIZNDJIFLd0mYFMfHre8Irj3FXfbi0mZgNTVitj7UzGd+zihljbLGhO6zu6cQf5k8FF8DIdkMb9iN+mxkqvieGV44Jxh5W1N/ZegGHpGYQJkticPLX9UANVK/s3TNAbd3Ya7HsrjIvGk9odkNWUCdDYenquUBvKE7k9LCF9xW0KNcrv6u2bpVslzIbapT95Fha/XU3IkIkhpGD6cjGgc3Tnw+XdV3NrZEjPvKz2Rm6WHTBJJn9TptEGImDnZluxxa1LbAq6+4u6Uo1SJMiL9q9KxEk3AVbu4J1a7PJwxeXvzATaPaK4Q45Tdunvsg9Dd4VQZXGquYvhCkyicM2zMDe0hxIZiXC8xDWXafFslxL5fmabdxHjzCbSwtm6ralKH/YAybGLc6rP23W2ArQ/PXF9WfviGpyBr6846pGLSJ3SKSZmA1NUu7AuWTqV04TOjqXeORXpL1pjYdUa3WAhPB5QrL0QZ3SuIy4W7Uk8NtAzNK5ThsZJX/GwS9R7t7w88m0TJUO3KgCEohmS6CWAt9y+DfVTAVbdCd6QxqK7ibY/kQd+tt0UmtWf5Suo1DaC7qc6WQfwcYS0J3f9cdruxRt3WhF72/ABLPORg892fvrtS5ievibEH6PavDKuFWtY/jcL43i1onJk3u5eTVsNa1q4kF96z0NvO3GX43XD51C63WSbSJvOJUjePP/mkNgUM71vcKUepEt27X+F9rKQSk4CrTnVCQWK1L/wg3xgcbD7A5hHNFWKcsjL4p1a7KtkQHlgGx457jasYvtAkCs8mbcyN7eHQ2jW9JG2otM1NlRT7FcUPTbutxDc8tSq/juFzG9qqanoeOu71BGK/kNUADRlCDGaoRG6JIQZohExafNRT+TGfeapfPMVQSmoIAbzVP1FlSYi+z6DNNtFd7ZmKyD2Seg7fq9l47J5z8j4DJeTY3C9pOaQ5T1wOkjkav1Qkity5tPwJxDa6NfehkjdXfk8ivNbxwJqBB7x7TFeIawYbsPLj0348f1DAOT+ENjGSNcNjeXBd8xPKhK9pSSAJILgDyDTXt1rqo6TNb23e7dqekU533a8Hnb2JcqPrMyP/ho0+KpB2AL2UBK58j29MMthsPvNd7vPKefinDq5l7YoxuMsGF+oeWgiNfmF73ZXJnEzkHxPxJEnZAganyzcwmXIUKpHqjZoguIa0EmNAGFH8YVPt/PKPrAmLAZs80veCpRlCmxe6Ivs8qat+uHClaI87U2YDqXLPiYxU+o5N5RoqrRmMVXbNEGs37SWmoZI2N1VS7FdEaFobg8Z8zDrLHWX4wnhl+IeRKMNhaF7qoU9n8b7muPQFP3QcfoJKvKcM7/XrGMfhTb+O8XV54bmYr8oBlWEJE7bDMh7e7d6aw7vdn6AS7yrDe/2i3lF42y/qfVniQ4z/LHihebAOPoXN0cMyhHOIw/JOv+rzgfwMleg3HLOYLaifnzf9CvfXhE9PXn7yHwAA/sH8M3eTAAAAlIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBgAAABYoAwAAAAuUAQAAgAXKAAAAwAJlAAAAYIEyAAAAsEAZAAAAWKAMAAAALFAGAAAAFigDAAAAC5QBAACABcoAAADAAmUAAABggTIAAACwQBkAAABYoAwAAAAsUAYAAAAWKAMAAAALlAEAAIAFygAAAMACZQAAAGCBMgAAALBAGQAAAFigDAAAACxQBvBm1lUvDsVjVi369ym8MfOn2v5UiiX/ilXynF7yrsqwVIReP8brYwhN1elV4EeTcgxVNenl2+nJkEGvD0VHhmk/uTZVk7UxCVgvbVW1V/kw9XVV9+psVyriaZbr27Wvk7pb+qaqRr5aKUbjrhzFgAImjwRjlUmqZBU1LhNypJ6iQculjf1ooKRilURzywxNVQ8F/Wl8F5hPZK5atZwpUW/iOp5if507W7u+gMR0oprnOJOUo5ev53O+AbeMuVGRJsW9gpHUyKhYDVzAs14bq9KAYgG5RpNyFEhLbkgDOI/Ot6ct+TpQf5A6KQeEpLTgSZ2EhqIvd04lctZqfwv7zFNCQ5V6iW2otD00xGtAsUpiHr1vvSJ5Ix1kHlH3r9Kc6U6CeV4fgxlyjfjapKYkkbIyhB65pRhAQWlzHIZo1XhaqWtd9FNCGlAPM3XM2vW+S3tdaXy2LmBtqeRT64bapbssSd2NzeD7S3tZb0vn84gBa3taSIBe6JppHobUKpNU0aptX+kGCVq7/hrDzhR9GbxVSTmK9BRj7qRKtgydVvbSkKVT48b5XI8L5VG7lPvTeA39dW7pu8tJPnCh5t6r0rkZtRLS7j115/mhTrbWQ2ZUpEmdpJ4ktRN/urZSDWca++s5Y1UaUCzgracUF68ZJUzJU9KAmQR4vUibb0o+N73mUAxIk5qlvWP5Q0MRWaciTMHtvoFd5imhoYq9xDSUaY+k2ESxSpLO8HJ5skYqrqLIxP3oLPNa5/wjMRgoww8QrFob16byb0omYExrunFFHlw6l1DGWHfX6MpH5zKX2n1IA6Tplhe65jaPDWKVSapo1aavXNrE4BCmiZwlJDG3yCQDI7v6metFK1smZ2Pq+thjOmJ/la4kQ39s+N9bJxYkc9Vt936ok53OuVGR+U78rrC44KWSAjo3k1plAooFlNGl3rBIWnJDGiAlVROIWPJFjPDkA/Z5UB8QYkMRWacidBnt+lFC5oZtQ2V6iSANZXqJ6QnFKjF5dC+tgfY9JKIVdfbzqEfIdcP7vD4Gk23E1yb1j1WGUbrFftGQCcgoQ+OcqHf6Sd2psDjEUWtYGtCJC7pTe8w2jw1ilUmqaJXtK2s95ZRB+8LkKiA1t4iuL7ScFqpprWyxzfTM/ZhfZJiLe9UEB6c4aRfddu9HOhnJV25U7L+7pjUtyqB5SzapVSagWECdz1o/tcWUPMUEiBJFZxVLvulF2YBMHq3v4BQhxikrw1IluvlWQuYpu4YqKYM2lOklsQhEsUpMHuNLiwabq0Uryv2ZeStLVbfnra5LU3WZNo/FiDHcCcDAe1xugzdNitgU3LPyPm93lTXVQNetzs3GlrccxbZiUklAV3XLiT6IsQsZ31wnNkS3n3XnrbrylvW+/fUe3dzj/U7dX9PvNWDkzeBz8CdJc6yt3xl+OsEq361243EfoPs2jkV3k7SaK9/+wdGOySRCBuIq/TgNEFa3dV5mm4cltconVbRqaNOmPZEpd5TBeZG9uWXCflkCzwq1skVkr7FCV7/ZkvRXn7mrLN8Grtf0STmnyh1s6CfTyUqsVOzcANsmRRklnXSS3SQVWdkPSq0yAcUCqofK1U/ElDwlExCvQ8mXzfQ7G7BPKixYk4Yiyspw9nFn7kpnniyTD6GI7Nsm3ucf6nqcyCeKC5jr8hlVdrW8bahcLxG0oUwv6U58DiMdv1glmzyqu+0ShlMWrShu+rkelts6+pXzcO7o87j3ozFnE0NT4kG5TWpbcMXdRYt6HsOrE9lVqqRnF39t3clhMSkTMDX1hWK7tf/SUFLLqde+kvSEqqabJ/5nS6LBI29Y+k1VE9BcFk5XP6aDlo+d9PLZBKt0PrIfCZsA6vfxdJk0VU7xZEaZ+Ndw0Q8syXps6OaMZ6lQE+BIPVGGXR4JxipCkipbdeGd+klnFlfuBzHVUAU6XuW4b29ukTGz77SweVrZKw/YNRzK0vTI9SFH6K+6LpPPsk+wNu67ZroGF+56db6TlThTIrkBtk3qdos9n2Zh6jTcClJV0liVBhQLKOvLF6w0JU/ZB6x+bpikOXZ8EBunqNmAfVIXWUWYhiL248HTeuETx1K7GzUid6aJCj3VzVVcFaVEebuLDD5zg22ofC8RtKFMe5x48TyKWypWySaPrmigYHO1uIpaBu76KvyrrNhvgxmZKSFnE2N1EzkZfJuktgVX/F0c5axl66hOrlIeqZFiUiZgkpWgO8fXAKlPqwwu5LoRXCYKwKKbDDKx3C7b0qLE5jjkmkEv9iNhFzD3cTeApNY5A1/MvQ/uTnxUSH2TP8xt1/QnqTETwPQvbOTv8jCkVvmkylYJMtHleVMaFEvKJ9DXtnep7MwtMuaWPm4G5Cv72rTJISf34JBs6C9qhX5uTws5H5m9VD15gkVmhkooeppqnpknniGXPbEWZ92wYZZB51pr19Vn76JSq0xAqYBayfettCVP2AWsbayEkObQ8kHsNfjBbMA+D9dA/m80MHaGLbozQH7Z5SQbiRqRyzlx9bEL0dX2vTWDzzxl11C5XuIIDZW2h6CbkaUq2eRxNsnuuRfstlvcY3l65ESjUDyrLmUy+Jw3Mdy0zj3MsE1qU3DFTwAdfvCxKpw0FjdiMSkboP6fa2jVGy7ylVEG149zxkQBCI9Q8FMwaQAt/mimVbchduxtRyJY9eiagUmnOKtzGeXZeScjaORqFxnVmk4DmJeEYZ/HhmiVT6psleI+ywM1MSgpKTVhM8iA2JpbJCsMV1dyrWyZypzkgxCm6qG32VktP4rbXqVz6gO24TEbIrTiy53MzWCzA0yIKfgnkIRZFlCum8/6BEpqVRpQLOD7rhlSYYhpDjI1X7z12YBdHjJR3TQU8YAyLLybpAskjcgt5NLmi3ISHp+5IdNQ+17iCA2VtocgNxarZJNH7pG1lHvBsZThQVytoZeVYRPD9SK30NgmldiaYL7011wL3huzbcWkbIBWHtdQuEG+SqtVRmDOmCgAodjyVQxYW3cWegmxY287EsEqv0lp3AGTC0h7sgRoMfc7+p0sqtymsx7Qio9JA6i60m2MAts8tmhAklTRKsV95vMnxs/otiNZloPW3DJuPb3DH2A5y+SQXFeZQtjwDr3N98e4E06puOiVmHBONCq04sudTA2RNsgQUwg7soJbW0+ygOalesBZZQKKBdThocv0ArmSOzYBc9xKImJHltbW06xCwC4P/5CTaSj+vOkMEe9hhFlLLl9yv3ItyRcvK4PP3KCGpA0VzLU+adNQ6WpSbixWiWbh83gfZfAPB3heVoZtDOofWiWbgE3BlTn9srRmKCdlArRjcA191JpBntBMYofmOBTBKp1F+cqM5AJSDytdQmaDcxhp4Q6VRudRdQ9Q7k0D7PSvxDaPLZJnmlTRKsFtTCoxaDuSZdFkzC1zd+WjlS1dxayBQzcJFxpsHuuX4pzEvlQZgo98sJPl+rQSkko3kxiXtO7c6jpScFaZgGIBNV5uVRXJldxhA2Z7ABhKPms32LnBNGCXh93PidVYdutWGfT5II3IObkS80U5CU9uM0mwDRU+ma+3DSW9RLg6B1usEkdM7E27SbGUfr9GeUAZNjFIFrQbbgI29eHRkxzXvYrnDMWkTECiDDrN0XMbP/dxHkPqM2eMPhpJd23PGUKA1pRsUjNJcxzxnGF1Dz7Iv8RY+Ud9NgHMJbhaCuADfCquK1B8mlnqjpEZjXuU7iLBWmVJwNzGyiEKZ3U2D6pEe5dYZZIqWXUR/52O2WjwZiT7V+sSc7lTbByDsJ70EEWYa3uXVvbJ1ax5YOTkXVTsbdIv0xeGdTKoB+Md/TuLj9XXKIikk3VV+HZHzKWv9ERulxQfTibMbt45i9Hp41FilQkoFlBGiT+5K1TipuRJJaYB1/BkmRBLLk8fyLPGRD5gU7trbH4mxim7df+qvL46nCqDS83VMV9oEuVzhjTz0B6CdT6ZXkJsGkraQ9fNWpBilTBJlysWVjDGbEgqiuZm3Fcmf/RucksJOW9i3OqzdsNtgK0Pz1xfVj7y5JG6tu6sQ8qfPptUTMoEpMqw8JBfOp2JLXxmNPXOD0qD5Yzp2+W2yOHr6CZI+hBAErBwP7h2TYidNAdvbenls4lW8ZtcqwwYooveOQkYm3G5rYOc3zc99/9WhzmLfPIyWOzs15pfJHZ3USrrbfETzhiw6PRPV1zX8FMVG0weXIlyW2rVJqmCVWtHPmEd0rlrzDL08ZW+WsPuUFIOGo15t6vLFT8WeGtCrgSt7JnnD7NMrPvuSlVyCrobe5t7O0lfalvoMj42xAe9s8wzzzXV6Bhnz7E514LbdcRcyEK9bZuUH0FzM1Duo/7yRc8P4uj62liVBpQLyOWZ/TvQhUo0JTeVmARcte1CQWLJF37ucAwONh9g81C/Hohxysrgn1rtKio5yaCLMvDMYOy4M7k65gtNgspRSCvNPLaHQxuq3EsI31CmPWY++VhO2nmLVcIkncGnVCDNdYP8OobPYGiryrkHcoPCfr9MAzRkCDGYoZLeRgwxQCNk0uKjnsr7rsz7DOIphlJSQwjgneWJakRC9H0GbbaJ7mrPVETukVTLfG8YLZ71XFf1Sb5O3mcwAVdOaKRM6BOn5ZAoR1wzsIN1j+kKcc1gAiZ+pURP28gPUMX5+Cs/Pi390JdWy8g1qlNp95tGofuFAG4Jh/SMc2kIJXm4SvS3JVZtkipaxV1Gy8FwgCuiu4Xg9lw41VAjaTlubd7tamQfaNcM3JN02JJV4jfJEH7rRR+G5TsYyXOm/HSAXPkejUBcqEE0ZOKkpKV80aW3X8tLBnejdthkjpokRcSdtuVMhoQAfulBX9KxViUBxQKyP610ElWsRFNyW4kxIIwo/mBLTg6Rcje9YRewySPRCCI2FOVT6IqUmL7p1g88DrwrOvOQIFXuOZGROkTHpnJVltcMaeZmzRAbqtxLkoYy7cEPwMRqL1ZJ2hne9Kbb1yU9YPgHYacPx6B5qYc+nSUMrMPSl/zQYfgJKvGeMrzrr2Mcgjf9OsbXZf9Qzj+CAyrDcpgFVZHx8G731hze7f4ElXhXGd7lF/UOxNt+Ue/Lcg1r3H8WvDQ9WAef0sPuYzLoccOBec9f9fkYfoZK5N2gImYL6ufnTb/C/TXh0xO//QgAAGDH7fb/AcNfk5XiKsAdAAAAAElFTkSuQmCC" /> (Exemple de résultat, vous aurez
-certainement un résultat différent avec moins de régions)</p>
-</div>
-<div id="lire-larbre-et-les-clusters-créés-par-map-equation-sous-r" class="section level1">
-<h1>4. Lire l’arbre et les clusters créés par Map Equation sous R</h1>
-<p>Fonction <code>readInfomapTree</code></p>
+<div id="première-lecture-et-interprétation-du-résultat" class="section level1">
+<h1>2. Première lecture et interprétation du résultat</h1>
+<p>Quand vous tapez le nom de l’objet issu de la clusterisation dans la
+console, vous obtenez un premier résultat, qui vous donne plusieurs
+infos :</p>
+<ul>
+<li><p>le nombre de partitions = nombre de niveaux hiérarchiques trouvés
+par infomap. Plus il y a de partitions, plus le réseau est complexe et
+structuré.</p></li>
+<li><p>le nombre de clusters dans chaque partitions. Les partitions
+apparaissent par ordre hiérarchique, comme un arbre, du niveau le plus
+haut au niveau le plus bas. La première partition contient généralement
+quelques gros clusters ; les partitions suivantes continennent
+généralement des sous-clusters plus nombreux, emboîtés dans les niveaux
+supérieurs.</p></li>
+</ul>
+<p>Question : combien de niveaux avez-vous ? Combien de clusters à
+chaque niveau ?</p>
+<p>Ensuite, inspectez les clusters en eux-mêmes. Pour cela, il faut
+accéder au tableau qui attribue les clusters aux sites et aux espèces
+(<code>&lt;votre objet&gt;$clusters</code>). Notez comment les clusters
+ont une notation hiérarchique. Prenons un cas de figure comme ceci :</p>
+<p><code>Acheloos   1    1.4    1.4.18     1.4.18</code></p>
+<p>Le site ‘Acheloos’ appartient au cluster 1 de la première partition,
+et au cluster 1.4 de la deuxième partition. Le “1.4” signifie
+<em>sous-cluster 4 du cluster 1</em>. On remarque que cette notation
+continue, et donc au niveau 3 il appartient au sous-sous-cluster 18 du
+sous-cluster 4 du niveau 1. Ainsi, chaque nouvelle partition reprend les
+informations de la partition précédente, pour que la hiérarchie soit
+bien apparente.</p>
+<p>Question : combien y a-t-il de sites et d’espèces par cluster pour la
+première partition ? Qu’en déduisez-vous pour les régions
+biogéographiques ?</p>
+<p>Faites la même analyse pour la deuxième partition (= deuxième niveau
+hiérarchique).</p>
+<p>Pour inspecter le nombre d’espèces et de sites par niveau utilisez la
+fonction <code>count</code> du package <code>plyr</code> (permet de
+compter le nombre de répétitions d’un facteur).</p>
 </div>
 <div id="analyser-séparément-les-sites-et-les-espèces" class="section level1">
-<h1>5. Analyser séparément les sites et les espèces</h1>
+<h1>3. Analyser séparément les sites et les espèces</h1>
+<p>Notre tableau des clusters mélange les espèces et les sites. Nous
+allons donc le séparer en deux pour pouvoir analyser séparément espèces
+et sites. Pour cela, nous allons utiliser un outil de programmation
+pratique, la fonction <code>which(&lt;condition&gt;)</code>, qui sert,
+comme son nom l’indique (“lesquels respectent la condition”), à
+récupérer un sous-ensemble d’éléments. Procédons par étapes.</p>
+<ol style="list-style-type: decimal">
+<li><p>Extrayez votre tableau de clusters et mettez le dans un objet.
+Par exemple,
+<code>clusters1 &lt;- fish_clusters1$clusters</code></p></li>
+<li><p>Dans ce tableau, on veut tout d’abord savoir quelles lignes
+correspondent aux sites. Ecrivons donc notre commande which pour
+commencer, en essayant de traduire cette phrase en code <strong>“quels
+éléments de la colonne ID de clusters1 correspondent à des noms de sites
+dans notre réseau initial fishdb1”</strong>. Traduit en code, cela donne
+<code>which(clusters1$ID %in% fishdb1$Basin)</code>. Vous me suivez
+jusque là ?</p></li>
+<li><p>Dernière étape, filtrer notre objet clusters avec ce which pour
+ne garder que les sites. Pour cela, on va utiliser le code
+<code>A %in% B</code> sert à tester la condition “quels éléments de A
+sont présents dans B”. Voici à quoi ça devrait ressembler :
+<code>clusters1[which(clusters1$ID %in% fishdb1$Basin), ]</code>. Bravo,
+vous commencez à maîtriser la programmation !!</p></li>
+<li><p>Refaites cette démarche pour ne garder que les espèces cette
+fois.</p></li>
+</ol>
+<p>Pensez bien à stocker les infos de clusters des sites et des espèces
+dans deux objets distincts, et ensuite répondez à cette question :</p>
+<p>Combien y a-t-il de sites par cluster dans les deux premières
+partitions ? Combien y a-t-il d’espèces par cluster dans les deux
+premières partitions ?</p>
+</div>
+<div id="faites-une-carte-des-régions" class="section level1">
+<h1>4. Faites une carte des régions</h1>
+<p>C’est sûrement l’étape qui est la plus utile pour interpréter les
+clusters : visualiser ces clusters sur une carte. Néanmoins, ce n’est
+pas une étape si simple à réaliser que ça. En attendant que j’écrive une
+fonction qui fera le travail pour vous de manière simple, il va falloir
+mettre les mains dans le cambouis (×_×)</p>
+<p>Pour faire simple nous n’allons travailler que sur la partition de
+niveau 2, pas sur la partition de niveau 1. Si vous souhaitez la faire
+sur d’autres partitions il suffira d’adapter le code.</p>
+<p>Commencez par créer un tableau qui contiendra les clusters, et, pour
+chaque cluster, une couleur unique. On va utiliser les palettes de <a href="colobrewer2.org">RColorBrewer pour cela</a>, avec la fonction
+<code>brewer.pal()</code>:</p>
+<pre class="r"><code># On commence par récupérer les noms des clusters de la partition de niveau 2
+# En regardant le tableau des clusters on voit qu&#39;il s&#39;agit de la 3e colonne
+clusters.lvl2 &lt;- unique(fish_clusters1$clusters[, 3])
+clusters.lvl2
+
+
+# Ensuite, on crée un tableau avec les couleurs sur la deuxième colonne
+bioregions &lt;- data.frame(
+  clusters = clusters.lvl2, # La première colonne contient les clusters
+  # La deuxième colonne contient les couleurs
+  colors = brewer.pal(length(clusters.lvl2), # On veut autant de couleurs que de clusters
+                      &quot;Set2&quot;) # J&#39;ai demandé la palette &quot;Set2&quot; ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
+)
+
+bioregions</code></pre>
+<p>Une fois que l’on a un tableau avec des palettes de couleurs pour
+chaque cluster, on peut remplir notre objet spatial avec les clusters et
+les couleurs. Pour cela il va falloir utiliser la commande
+<code>match()</code>, indispensable en programmation, mais si difficile
+à comprendre la première fois ! Et en plus vous allez devoir l’utiliser
+deux fois (╬ Ò﹏Ó)</p>
+<p>Voici une explication visuelle :</p>
+<p><strong>tableau1 (bioregions)</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Cluster</th>
+<th align="center">Color</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1.4</td>
+<td align="center">Red</td>
+</tr>
+<tr class="even">
+<td>1.1</td>
+<td align="center">Green</td>
+</tr>
+<tr class="odd">
+<td>1.2</td>
+<td align="center">Blue</td>
+</tr>
+<tr class="even">
+<td>2.1</td>
+<td align="center">Green</td>
+</tr>
+</tbody>
+</table>
+<p><strong>tableau2 (clusters)</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>ID</th>
+<th align="center">Cluster</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Basin1</td>
+<td align="center">1.1</td>
+</tr>
+<tr class="even">
+<td>Basin2</td>
+<td align="center">1.1</td>
+</tr>
+<tr class="odd">
+<td>Basin3</td>
+<td align="center">1.2</td>
+</tr>
+<tr class="even">
+<td>Basin4</td>
+<td align="center">2.1</td>
+</tr>
+<tr class="odd">
+<td>Basin5</td>
+<td align="center">1.1</td>
+</tr>
+<tr class="even">
+<td>…</td>
+<td align="center">…</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tableau2$Color &lt;- tableau1$Color[match(tableau2$BasinName, tableau1$Name)]</code></pre>
+<p><strong>Résultat</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>ID</th>
+<th align="center">Cluster</th>
+<th align="center">Color</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Basin1</td>
+<td align="center">1.1</td>
+<td align="center">Green</td>
+</tr>
+<tr class="even">
+<td>Basin2</td>
+<td align="center">1.1</td>
+<td align="center">Green</td>
+</tr>
+<tr class="odd">
+<td>Basin3</td>
+<td align="center">1.2</td>
+<td align="center">Blue</td>
+</tr>
+<tr class="even">
+<td>Basin4</td>
+<td align="center">2.1</td>
+<td align="center">Green</td>
+</tr>
+<tr class="odd">
+<td>Basin5</td>
+<td align="center">1.1</td>
+<td align="center">Green</td>
+</tr>
+<tr class="even">
+<td>…</td>
+<td align="center">…</td>
+<td align="center"></td>
+</tr>
+</tbody>
+</table>
+<p>Nous allons voir deux façons de faire : une méthode simple, dans
+laquelle on ne choisit pas les couleurs, et une méthode où l’on définit
+nous-mêmes les couleurs. Cette deuxième méthode est plus complexe mais
+sera très utile pour comparer le réseau et la carte des régions.</p>
+<div id="carte-simple-et-rapide" class="section level2">
+<h2>4.1 Carte simple et rapide</h2>
+<p>Utilisez la fonction <code>map_clusters()</code> de bioregion pour
+afficher la carte :
+<code>map_clusters(fish_clusters1, basins, plot = TRUE)</code></p>
 <p>Récupérez les tableaux indiquant quel bassin est associé à quelle
 région, et quelle espèce est associée à quelle région. Inspectez ces
 tableaux, et regardez le nombre de bassins / espèces dans chaque grande
@@ -451,9 +822,7 @@ garder.</p>
 Ces deux fonctions nécessitent à la fois la base <code>fishdb1</code> et
 l’arbre créé par Map equation. N’oubliez pas de préciser les noms de
 colonnes correspondant aux espèces ou aux bassins.</p>
-<p>Pour inspecter le nombre de bassins ou d’espèces par niveau utilisez
-la fonction <code>count</code> du package <code>plyr</code> (permet de
-compter le nombre de répétitions d’un facteur).</p>
+</div>
 </div>
 <div id="attribuer-des-couleurs-aux-grandes-régions" class="section level1">
 <h1>6. Attribuer des couleurs aux grandes régions</h1>
