@@ -12,7 +12,7 @@ unlink("data/data_cours/data_cours.zip")
 zip("data/data_cours/data_cours.zip",
     files = c(paste0("data/data_cours/basin_simplif.",
                      c("dbf", "prj", "shp", "shx")),
-              "fishdb1.RDS", "fishdb2.RDS"))
+              "data/data_cours/fishdb1.RDS", "data/data_cours/fishdb2.RDS"))
 ```
 
 # Introduction  ฅ՞•ﻌ•՞ฅ
