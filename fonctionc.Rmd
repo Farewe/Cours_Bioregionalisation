@@ -27,15 +27,14 @@ subtidaldb <- readRDS("./data/invertebres_benthiques.RDS")
 
 # Site position
 sites <- readRDS("./data/sites_invertebresbenthiques.RDS")
-sites <- st_as_sf(sites,
-                  coords = c("X", "Y"),
-                  crs = "EPSG:4326")
 ```
 
 # 2. Calcul des distances entre bassins avec l’indice ßsim [3]
 
 ```{r}
 dist_subtidal <- dissimilarity(t(as.matrix(subtidaldb)))
+
+
 ```
 
 # 3. Visualisation des distances entres sites
@@ -50,9 +49,13 @@ col_subtidal <- recluster.col(subtidal_nmds$points)
 
 colnames(col_subtidal) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
 
-sites <- cbind(sites, 
+sites <- data.frame(sites, 
                col_subtidal[match(sites$station_id,
                                   rownames(col_subtidal)), ])
+
+sites <- st_as_sf(sites,
+                  coords = c("X", "Y"),
+                  crs = "EPSG:4326")
 
 
 op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))

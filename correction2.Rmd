@@ -49,7 +49,8 @@ fish_clusters1 <- netclu_infomap(net = fishdb1,
                                  bipartite = TRUE,
                                  bipartite_version = FALSE,
                                  site_col = "Basin",
-                                 species_col = "Species")
+                                 species_col = "Species",
+                                 seed = 123)
 ```
 
 
@@ -164,7 +165,8 @@ fish_clusters2 <- netclu_infomap(net = fishdb2,
                                  bipartite = TRUE,
                                  bipartite_version = FALSE,
                                  site_col = "Basin",
-                                 species_col = "Species")
+                                 species_col = "Species",
+                                 seed = 123)
 fish_clusters2
 
 plyr::count(fish_clusters1$clusters[, 2])

@@ -73,7 +73,7 @@ Les fichiers fishdb1 et fishdb2 sont déjà formatés comme il convient pour con
 
 A partir de là, vous pouvez rechercher les clusters sur la base du réseau en utilisant l'algorithme infomap avec la commande `netclu_infomap()`. Plusieurs éléments sont importants à configuer ici :
 
-* Par défaut, `netclu_infomap()` attend un réseau pondéré. Il faut donc prévenir la fonction qu'il s'agit ici d'un réseau non pondéré. Argument `weight`
+* Par défaut, `netclu_infomap()` attend un réseau pondéré. Il faut donc prévenir la fonction qu'il s'agit ici d'un réseau non pondéré avec l'argument `weight`
 
 * Il faut donner le chemin vers le dossier où vous avez installé les binaires dans les pré-requis. Dans mon cas c'est `binpath = "c:/r"`
 
@@ -83,9 +83,9 @@ A partir de là, vous pouvez rechercher les clusters sur la base du réseau en u
 
 * **Très important** : les résultats d'infomap sont hiérarchiques ; cependant si vous n'affichez pas la hiérarchie (argument `show_hierarchy`), dans ce cas vous ne pouvez pas interpréter correctement les résultats du clustering. Faites la comparaison des résultats entre `show_hierarchy = TRUE` et `show_hierarchy = FALSE`, vous comprendrez l'importance de cet argument.  
 
-* Enfin, l'algorithme infomap peut être paramétré spécifiquement pour les réseaux bipartites, ou pas (argument `bipartite_version`). A titre personnel, je n'utilise jamais cette option bipartite, car elle n'existait pas dans ses premières versions, et je trouve qu'elle dégrade la pertinence des résultats d'un point de vue biologique. Néanmoins, c'est une opinion assez subjective, et donc je vous invite à vous faire votre propre opinion si vous utilisez infomap sur vos jeux de données à vous. Pour activer ou désactiver la version bipartite d'infomap, il faut utiliser l'argument `bipartite_version`
+* L'algorithme infomap peut être paramétré spécifiquement pour les réseaux bipartites, ou pas (argument `bipartite_version`). A titre personnel, je n'utilise jamais cette option bipartite, car elle a été ajouté seulement récemment dans les possibilités d'infomap, et je trouve qu'elle dégrade la pertinence des résultats d'un point de vue biologique. Néanmoins, c'est une opinion assez subjective, et donc je vous invite à vous faire votre propre opinion si vous utilisez infomap sur vos jeux de données à vous. Pour activer ou désactiver la version bipartite d'infomap, il faut utiliser l'argument `bipartite_version`
 
-
+* Mettez l'argument `seed = 123`. Une "seed" (graine) fixe le point de départ des résultats aléatoires dans un logiciel, pour que tout le monde obtienne les mêmes résultats, même avec de l'aléatoire. Ca permettra que nous ayons tous les mêmes résultats pour le TP. 
 
 ## 3.2. Première lecture et interprétation du résultat
 
@@ -115,14 +115,21 @@ Pour inspecter le nombre d'espèces et de sites par niveau utilisez la fonction 
 
 # 4. Analyser séparément les sites et les espèces
 
-Notre tableau des clusters mélange les espèces et les sites. Nous allons donc le séparer en deux pour pouvoir analyser séparément espèces et sites. Pour cela, nous allons utiliser un outil de programmation pratique, la fonction `which(<condition>)`, qui sert, comme son nom l'indique ("lesquels respectent la condition"), à récupérer un sous-ensemble d'éléments. Procédons par étapes.
+Notre tableau des clusters mélange les espèces et les sites. Nous allons
+donc le séparer en deux pour pouvoir analyser séparément espèces et sites.
+Pour cela, nous allons utiliser un outil de programmation pratique, la
+fonction `which(<condition>)`, qui permet d'extraire un sous-ensemble
+d'éléments répondant à une condition donnée.  Procédons par étapes.
 
-1. Extrayez votre tableau de clusters et mettez le dans un objet. Par exemple, `clusters1 <- fish_clusters1$clusters`
+1. Extrayez votre tableau de clusters et stockez le dans un objet. Par exemple, `clusters1 <- fish_clusters1$clusters`
 
-2. Dans ce tableau, on veut tout d'abord savoir quelles lignes correspondent aux sites. Ecrivons donc notre commande which pour commencer, en essayant de traduire cette phrase en code 
-**"quels éléments de la colonne ID de clusters1 correspondent à des noms de sites dans notre réseau initial fishdb1"**. Traduit en code, cela donne `which(clusters1$ID %in% fishdb1$Basin)`. Vous me suivez jusque là ?
+2. **Identifier les lignes correspondant aux sites :** Nous voulons maintenant identifier quelles lignes de ce tableau correspondent aux sites. Pour cela, nous allons utiliser la fonction `which`. La condition que nous cherchons à traduire est : *"Quels éléments de la colonne ID de clusters1 correspondent aux noms des sites dans notre réseau initial fishdb1 ?"*
+Pour cela, on va utiliser le code `A %in% B` qui sert à tester la condition "quels éléments de A sont présents dans B".
+Traduit en code, cela donne `which(clusters1$ID %in% fishdb1$Basin)`. 
+Ce code renvoie les numéros des lignes de clusters1 dont l'ID correspond à un site présent dans la base de données fishdb1.
 
-3. Dernière étape, filtrer notre objet clusters avec ce which pour ne garder que les sites. Pour cela, on va utiliser le code `A %in% B` sert à tester la condition "quels éléments de A sont présents dans B". Voici à quoi ça devrait ressembler : `clusters1[which(clusters1$ID %in% fishdb1$Basin), ]`. Bravo, vous commencez à maîtriser la programmation !!
+3. Dernière étape, **filtrer notre objet clusters pour ne garder que les sites**. Il suffit d'utiliser le `which` pour filtrer le tableau clusters1 pour ne garder que les lignes correspondantes.
+Voici à quoi ça devrait ressembler : `clusters1[which(clusters1$ID %in% fishdb1$Basin), ]`. Bravo, vous commencez à maîtriser la programmation !!
 
 4. Refaites cette démarche pour ne garder que les espèces cette fois.
 
@@ -137,7 +144,7 @@ Combien y a-t-il d'espèces par cluster dans les deux premières partitions ?
 
 # 5. Faites une carte des régions
 
-C'est sûrement l'étape qui est la plus utile pour interpréter les clusters : visualiser ces clusters sur une carte. Néanmoins, ce n'est pas une étape si simple à réaliser que ça. En attendant que j'écrive une fonction qui fera le travail pour vous de manière simple, il va falloir mettre les mains dans le cambouis (×_×)
+C'est sûrement l'étape qui est la plus utile pour interpréter les clusters : visualiser ces clusters sur une carte. Néanmoins, ce n'est pas une étape si simple à réaliser que ça. En attendant que j'écrive dans le package une fonction qui fera le travail pour vous de manière simple, il va falloir mettre les mains dans le cambouis (×_×)
 
 Pour faire simple nous n'allons travailler que sur la partition de niveau 2, pas sur la partition de niveau 1. Si vous souhaitez la faire sur d'autres partitions il suffira d'adapter le code.
 
@@ -156,7 +163,7 @@ clusters1.lvl2
 bioregions1 <- data.frame(
   clusters = clusters1.lvl2, # La première colonne contient les clusters
   # La deuxième colonne contient les couleurs
-  colors = brewer.pal(length(clusters.lvl2), # On veut autant de couleurs que de clusters
+  colors = brewer.pal(length(clusters1.lvl2), # On veut autant de couleurs que de clusters
                       "Set2") # J'ai demandé la palette "Set2" ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
 )
 
@@ -209,8 +216,15 @@ clusters1$colors <- bioregions1$colors[match(clusters1$Cluster, bioregions1$Clus
 | Basin5             | 1.1           | Green    |
 | ...             | ...           |   ...    |
 
-Que s'est-il passé dans cette commande maléfique ? Décomposons la. Nous extrayons la colonne "colors" du tableau bioregion avec la première partie :
-`bioregions1$colors`. Notre objectif est de s'assurer que tous les sites qui sont dans le cluster 1.1 aient la couleur verte ; les sites 1.2 aient la couleur bleue, etc. On va pouvoir le faire grâce à la commande `match()` qui va faire correspondre les colonnes Cluster entre nos deux tableaux. Dans notre exemple ci-dessus, la commande `match()` va nous dire à quelles positions se trouvent les éléments de `clusters1$Cluster` dans `bioregions1$Cluster`. Par exemple, le 1.1 de tableau2 est en position 2 dans tableau1, on sait donc qu'il faut prendre la 2e couleur de tableau1. Le 1.2 est en 3e position dans tableau1, on sait donc qu'il faut prendre la 3e couleur. Ainsi, en mettant notre match dans les crochets, on extrait la bonne couleur à la bonne position en faisant la correspondance des colonnes clusters.
+Que s'est-il passé dans cette commande maléfique ? Décomposons la. 
+
+1. **Extraction des couleurs :** La première partie `bioregions1$colors` extrait la colonne des couleurs du tableau `bioregions1`.
+
+2. **Correspondance des clusters avec `match()` :** La fonction `match()` compare les valeurs de `clusters1$Cluster` avec celles de `bioregions1$Cluster`. Elle renvoie la position des clusters de `clusters1` dans `bioregions1`. Par exemple, si `clusters1$Cluster` contient 1.1, `match()` retournera 2 car 1.1 est en 2ème position dans `bioregions1`.
+
+3. **Utilisation des crochets pour extraire les couleurs :** Ensuite, nous utilisons ces positions pour récupérer les couleurs correspondantes. Par exemple, pour le cluster 1.1, `match()` renvoie 2, donc la couleur "Green" (qui est en position 2 dans `bioregions1`) est associée à toutes les lignes de `clusters1` avec le cluster 1.1.
+
+Ca prend un peu de temps de se familiariser avec `match()`, mais ça va venir, persévérez - c'est un des outils les plus utiles en R car vous pouvez faire correspondre des données issues de tableaux très différents.
 
 Allez-y, utilisez maintenant `match()` pour ajouter les couleurs depuis bioregions vers votre tableau des clusters.
 
@@ -228,7 +242,7 @@ Maintenant, à vous de jouer : ajoutez les couleurs (colonne color de votre tabl
 
 Ensuite, il ne vous restera qu'à utiliser `plot()` en lui indiquant la colonne colors dans l'argument `col` !
 
-Bravo, vous avez fait vos premiers `match()`, c'est un outil fondamental en programmation sur R !  
+Bravo, vous avez fait vos premiers `match()` !! 
 
 
 # 6. Ecrire le réseau biogéographique pour Gephi
@@ -261,6 +275,8 @@ Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre r�
 # 8. Refaites l'analyse pour la seconde base de données
 
 Répétez les étapes 3-7 pour la base de données fishdb2, **mais cette fois-ci en faisant l'analyse pour la première partition seulement**, et comparez les graphes et les cartes.
+
+N'oubliez pas l'argument `seed = 123` dans `netclu_infomap()` !
 
 **Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
 

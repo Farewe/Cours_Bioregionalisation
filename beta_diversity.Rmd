@@ -32,7 +32,7 @@ Téléchargez les données:
 
 - [Localisation des sites](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/sites_invertebresbenthiques.RDS)
 
-Chargez la matrice de présence-absence et la localisation des sites en utilisant la commande `readRDS()`. Transformez le tableau de localisation des sites en objet spatial de type `sf` avec la commande `st_as_sf()`, en spécifiant bien quelles sont les colonnes contenant les coordonnées avec l'argument `coords`
+Chargez la matrice de présence-absence et la localisation des sites en utilisant la commande `readRDS()`. 
 
 Si vous le souhaitez, calculez la richesse spécifique et supprimez les sites à faible richesse spécifique de la base de données.
 
@@ -78,16 +78,19 @@ Je vous laisse écrire le contenu de `match(    )`.
 
 *Vous y êtes presque ! Encore une étape et vous aurez une belle carte !*
 
+Transformez le tableau de localisation des sites en objet spatial de type `sf` avec la commande `st_as_sf()`, en spécifiant bien quelles sont les colonnes contenant les coordonnées avec l'argument `coords`. Indiquez aussi quel est le système de coordonnées : `crs = "EPSG:4326"` (EPSG:4326 est le petit code international pour le système de coordonnées WGS84)
+
 Pour afficher la carte, il faudra spécifier les couleurs en indiquant les bonnes colonnes dans : 
 ```{r eval=FALSE}
 plot(sites[1], col = rgb(red =   ,
                       green =   ,
                       blue =   ,
-                      maxColorValue = 255))
+                      maxColorValue = 255),
+     reset = FALSE) # Pour pouvooir ajouter le trait de cote par la suite
 
 # Ajoutez les contours (grossiers) de la Bretagne avec le package rnaturalearth
 library(rnaturalearth)
-wm <- ne_coastline(scale = 50, returnclass = "sp")
+wm <- ne_coastline(scale = 50, returnclass = "sf")
 
 plot(wm, add = TRUE)
 ```
