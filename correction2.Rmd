@@ -20,7 +20,7 @@ install_binaries(binpath = "c:/r")
 ```{r}
 # Packages
 library(bioregion)
-library(biogeonetworks)
+# library(biogeonetworks)
 library(sf)
 library(plyr)
 library(RColorBrewer)
