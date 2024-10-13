@@ -85,7 +85,7 @@ A partir de là, vous pouvez rechercher les clusters sur la base du réseau en u
 
 * L'algorithme infomap peut être paramétré spécifiquement pour les réseaux bipartites, ou pas (argument `bipartite_version`). A titre personnel, je n'utilise jamais cette option bipartite, car elle a été ajouté seulement récemment dans les possibilités d'infomap, et je trouve qu'elle dégrade la pertinence des résultats d'un point de vue biologique. Néanmoins, c'est une opinion assez subjective, et donc je vous invite à vous faire votre propre opinion si vous utilisez infomap sur vos jeux de données à vous. Pour activer ou désactiver la version bipartite d'infomap, il faut utiliser l'argument `bipartite_version`
 
-* Mettez l'argument `seed = 123`. Une "seed" (graine) fixe le point de départ des résultats aléatoires dans un logiciel, pour que tout le monde obtienne les mêmes résultats, même avec de l'aléatoire. Ca permettra que nous ayons tous les mêmes résultats pour le TP. 
+* Mettez l'argument `seed = 123` (windows) ou `seed = 3` (MAC). Une "seed" (graine) fixe le point de départ des résultats aléatoires dans un logiciel, pour que tout le monde obtienne les mêmes résultats, même avec de l'aléatoire. Ca permettra que nous ayons tous les mêmes résultats pour le TP. 
 
 ## 3.2. Première lecture et interprétation du résultat
 
@@ -169,6 +169,10 @@ bioregions1 <- data.frame(
 
 bioregions1
 ```
+
+### 5.3 SPECIAL MAC
+
+Ceux qui sont sur MAC obtiennent des résultats différents avec la seed 123. 
 
 ## 5.2 Ajouter les couleurs dans le tableau des clusters 
 
@@ -276,7 +280,7 @@ Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre r�
 
 Répétez les étapes 3-7 pour la base de données fishdb2, **mais cette fois-ci en faisant l'analyse pour la première partition seulement**, et comparez les graphes et les cartes.
 
-N'oubliez pas l'argument `seed = 123` dans `netclu_infomap()` !
+N'oubliez pas l'argument `seed = 123` (Windows) ou `seed = 3` (MAC) dans `netclu_infomap()` !
 
 **Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
 

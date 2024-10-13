@@ -7,7 +7,7 @@ editor_options:
 ---
 
 
-# 0. Installation de bioregion biogeonetworks
+# 0. Installation de bioregion 
 
 ```{r message=FALSE, warning=FALSE}
 library(bioregion)
@@ -169,10 +169,10 @@ fish_clusters2 <- netclu_infomap(net = fishdb2,
                                  seed = 123)
 fish_clusters2
 
-plyr::count(fish_clusters1$clusters[, 2])
+plyr::count(fish_clusters2$clusters[, 2])
 
 clusters2 <- fish_clusters2$clusters
-site_clusters <- clusters2[which(clusters2$ID %in% fishdb1$Basin), ]
+site_clusters <- clusters2[which(clusters2$ID %in% fishdb2$Basin), ]
 plyr::count(site_clusters[2])
 
 species_clusters <- clusters2[which(clusters2$ID %in% fishdb1$Species), ]

@@ -356,8 +356,8 @@ Naturelle</h4>
 </div>
 
 
-<div id="installation-de-bioregion-biogeonetworks" class="section level1">
-<h1>0. Installation de bioregion biogeonetworks</h1>
+<div id="installation-de-bioregion" class="section level1">
+<h1>0. Installation de bioregion</h1>
 <pre class="r"><code>library(bioregion)
 install_binaries(binpath = &quot;c:/r&quot;)</code></pre>
 </div>
@@ -366,10 +366,9 @@ install_binaries(binpath = &quot;c:/r&quot;)</code></pre>
 des bassins)</h1>
 <pre class="r"><code># Packages
 library(bioregion)
-library(biogeonetworks)
+# library(biogeonetworks)
 library(sf)</code></pre>
-<pre><code>## Warning: le package &#39;sf&#39; a été compilé avec la version R 4.3.3</code></pre>
-<pre><code>## Linking to GEOS 3.11.2, GDAL 3.8.2, PROJ 9.3.1; sf_use_s2() is TRUE</code></pre>
+<pre><code>## Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.3.1; sf_use_s2() is TRUE</code></pre>
 <pre class="r"><code>library(plyr)
 library(RColorBrewer)
 
@@ -562,16 +561,18 @@ fish_clusters2</code></pre>
 ##  - Number of partitions:  4 
 ##  - Partitions are hierarchical
 ##  - Number of clusters:  5 56 94 99</code></pre>
-<pre class="r"><code>plyr::count(fish_clusters1$clusters[, 2])</code></pre>
+<pre class="r"><code>plyr::count(fish_clusters2$clusters[, 2])</code></pre>
 <pre><code>##   x freq
-## 1 1 6080
-## 2 2 5777
-## 3 3   15</code></pre>
+## 1 1 4150
+## 2 2 4613
+## 3 3 2762
+## 4 4  351
+## 5 5    1</code></pre>
 <pre class="r"><code>clusters2 &lt;- fish_clusters2$clusters
-site_clusters &lt;- clusters2[which(clusters2$ID %in% fishdb1$Basin), ]
+site_clusters &lt;- clusters2[which(clusters2$ID %in% fishdb2$Basin), ]
 plyr::count(site_clusters[2])</code></pre>
 <pre><code>##   K_5 freq
-## 1   1  564
+## 1   1  566
 ## 2   2  115
 ## 3   3  117
 ## 4   4   46</code></pre>

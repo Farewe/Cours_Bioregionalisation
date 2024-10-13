@@ -560,11 +560,11 @@ vous invite à vous faire votre propre opinion si vous utilisez infomap
 sur vos jeux de données à vous. Pour activer ou désactiver la version
 bipartite d’infomap, il faut utiliser l’argument
 <code>bipartite_version</code></p></li>
-<li><p>Mettez l’argument <code>seed = 123</code>. Une “seed” (graine)
-fixe le point de départ des résultats aléatoires dans un logiciel, pour
-que tout le monde obtienne les mêmes résultats, même avec de
-l’aléatoire. Ca permettra que nous ayons tous les mêmes résultats pour
-le TP.</p></li>
+<li><p>Mettez l’argument <code>seed = 123</code> (windows) ou
+<code>seed = 3</code> (MAC). Une “seed” (graine) fixe le point de départ
+des résultats aléatoires dans un logiciel, pour que tout le monde
+obtienne les mêmes résultats, même avec de l’aléatoire. Ca permettra que
+nous ayons tous les mêmes résultats pour le TP.</p></li>
 </ul>
 </div>
 <div id="première-lecture-et-interprétation-du-résultat" class="section level2">
@@ -676,6 +676,11 @@ bioregions1 &lt;- data.frame(
 )
 
 bioregions1</code></pre>
+<div id="special-mac" class="section level3">
+<h3>5.3 SPECIAL MAC</h3>
+<p>Ceux qui sont sur MAC obtiennent des résultats différents avec la
+seed 123.</p>
+</div>
 </div>
 <div id="ajouter-les-couleurs-dans-le-tableau-des-clusters" class="section level2">
 <h2>5.2 Ajouter les couleurs dans le tableau des clusters</h2>
@@ -878,8 +883,8 @@ fenêtre « <em>Prévisualisation</em> » en jouant avec les options.</p>
 <p>Répétez les étapes 3-7 pour la base de données fishdb2, <strong>mais
 cette fois-ci en faisant l’analyse pour la première partition
 seulement</strong>, et comparez les graphes et les cartes.</p>
-<p>N’oubliez pas l’argument <code>seed = 123</code> dans
-<code>netclu_infomap()</code> !</p>
+<p>N’oubliez pas l’argument <code>seed = 123</code> (Windows) ou
+<code>seed = 3</code> (MAC) dans <code>netclu_infomap()</code> !</p>
 <p><strong>Qu’est-ce qui peut expliquer la différence entre les deux
 bases de données ?</strong></p>
 </div>
