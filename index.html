@@ -356,8 +356,6 @@ Naturelle</h4>
 </div>
 
 
-<pre><code>## Warning in system2(zip, args, input = input, invisible = TRUE): &#39;&quot;zip&quot;&#39; not
-## found</code></pre>
 <div id="introduction-ฅﻌฅ" class="section level1">
 <h1>Introduction ฅ՞•ﻌ•՞ฅ</h1>
 <p>Vous avez à votre disposition deux bases de données sur la
@@ -374,8 +372,23 @@ réseaux et les cartes entre les deux bases.</p>
 <h1>Pré-requis</h1>
 <div id="installer-le-package-bioregion" class="section level2">
 <h2>Installer le package <code>bioregion</code></h2>
-<p>Installez le package <code>bioregion</code> depuis le CRAN et
-installez les exécutables des méthodes basées sur les réseaux avec la
+<p>Le package <code>bioregion</code> est disponible sur le CRAN en
+version stable, mais des versions plus à jour, avec de nouvelles
+fonctionnalités, sont disponibles sur GitHub.</p>
+<p>Pour ce TP, nous allons utiliser une version de
+<code>bioregion</code> qui n’est pas encore sur le CRAN, afin d’inclure
+des fonctionnalités nouvelles pour vous faciliter la vie !</p>
+<p>Pour installer un package depuis GitHub, il faut utiliser le package
+<code>pak</code>. Si vous ne l’avez pas, installez-le avec
+<code>install.packages(&quot;remotes&quot;)</code>. <code>pak</code> est un
+package qui facilite l’installation de packages R depuis des sources qui
+ne sont pas forcément le CRAN (e.g. GitHub).</p>
+<pre class="r"><code>pak::pkg_install(&quot;bioRgeo/bioregion&quot;, ask = FALSE)                        </code></pre>
+</div>
+<div id="installer-les-exécutables-pour-les-méthodes-basées-sur-les-réseaux" class="section level2">
+<h2>Installer les exécutables pour les méthodes basées sur les
+réseaux</h2>
+<p>Installez les exécutables des méthodes basées sur les réseaux avec la
 fonction <code>install_binaries()</code>. En effet, plusieurs méthodes
 de clustering sur les réseaux (dont celle que l’on va utiliser) ne sont
 pas disponibles sur R et sont basées sur des fichiers exécutables.
@@ -387,7 +400,8 @@ fichiers exécutables. Je vous suggère de les mettre dans un dossier fixe
 et simple, par exemple dans un dossier <code>C:/R</code> (utilisateurs
 Windows) ou un dossier
 <code>/Users/&lt;nom utilisateur&gt;/Documents/R</code> (utilisateurs
-mac - mettez bien votre nom d’utilisateur pour corriger le chemin).</p>
+mac - mettez bien votre nom d’utilisateur pour corriger le chemin).
+<strong>EVITEZ les espaces dans le chemin de fichier</strong>.</p>
 </div>
 </div>
 <div id="chargement-des-données-bases-poissons-et-polygones-spatialisés-des-bassins" class="section level1">
@@ -597,12 +611,16 @@ continue, et donc au niveau 3 il appartient au sous-sous-cluster 18 du
 sous-cluster 4 du niveau 1. Ainsi, chaque nouvelle partition reprend les
 informations de la partition précédente, pour que la hiérarchie soit
 bien apparente.</p>
+<p>Pour visualiser facilement la hiérarchie, utilisez la fonction
+<code>summary()</code> sur votre objet de clusters. Cette fonction vous
+donnera un aperçu rapide de la structure hiérarchique et du nombre de
+sites et d’espèces par cluster. Par défaut, elle ne vous montrera que
+les 3 premiers niveaux hiérarchiques, et aux maximum 10 éléments par
+niveau, mais vous pouvez modifier ces paramètres avec
+<code>n_bioregionalizations</code> et <code>n_top_clusters</code>.</p>
 <p><strong>Question :</strong> combien y a-t-il de sites et d’espèces
 par cluster pour la première partition ? Qu’en déduisez-vous pour les
 régions biogéographiques ?</p>
-<p>Pour inspecter le nombre d’espèces et de sites par niveau utilisez la
-fonction <code>count</code> du package <code>plyr</code> (permet de
-compter le nombre de répétitions d’un facteur).</p>
 <p><strong>Question :</strong> Faites la même analyse pour la deuxième
 partition (= deuxième niveau hiérarchique).</p>
 </div>
@@ -641,235 +659,56 @@ fois.</p></li>
 </ol>
 <p>Pensez bien à stocker les infos de clusters des sites et des espèces
 dans deux objets distincts.</p>
-<p><strong>Question :</strong></p>
-<p>Combien y a-t-il de sites par cluster dans les deux premières
-partitions ? Combien y a-t-il d’espèces par cluster dans les deux
-premières partitions ?</p>
+<p><strong>Question :</strong> Faites un graphique (e.g. histogramme, ou
+autre selon votre préférence) du nombre de sites par cluster dans les
+deux premières partitions. Faites la même pour le nombre d’espèces par
+cluster.</p>
 </div>
 <div id="faites-une-carte-des-régions" class="section level1">
 <h1>5. Faites une carte des régions</h1>
-<p>C’est sûrement l’étape qui est la plus utile pour interpréter les
-clusters : visualiser ces clusters sur une carte. Néanmoins, ce n’est
-pas une étape si simple à réaliser que ça. En attendant que j’écrive
-dans le package une fonction qui fera le travail pour vous de manière
-simple, il va falloir mettre les mains dans le cambouis (×_×)</p>
-<p>Pour faire simple nous n’allons travailler que sur la partition de
-niveau 2, pas sur la partition de niveau 1. Si vous souhaitez la faire
-sur d’autres partitions il suffira d’adapter le code.</p>
-<div id="créer-un-tableau-avec-les-couleurs-pour-chaque-cluster" class="section level2">
-<h2>5.1 Créer un tableau avec les couleurs pour chaque cluster</h2>
-<p>Commencez par créer un tableau qui contiendra les clusters, et, pour
-chaque cluster, une couleur unique. On va utiliser les palettes de <a href="colobrewer2.org">RColorBrewer pour cela</a>, avec la fonction
-<code>brewer.pal()</code>:</p>
-<pre class="r"><code># On commence par récupérer les noms des clusters de la partition de niveau 2
-# En regardant le tableau des clusters on voit qu&#39;il s&#39;agit de la 3e colonne
-clusters1.lvl2 &lt;- unique(clusters1[, 3])
-clusters1.lvl2
-
-
-# Ensuite, on crée un tableau avec les couleurs sur la deuxième colonne
-bioregions1 &lt;- data.frame(
-  clusters = clusters1.lvl2, # La première colonne contient les clusters
-  # La deuxième colonne contient les couleurs
-  colors = brewer.pal(length(clusters1.lvl2), # On veut autant de couleurs que de clusters
-                      &quot;Set2&quot;) # J&#39;ai demandé la palette &quot;Set2&quot; ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
-)
-
-bioregions1</code></pre>
-<div id="special-mac" class="section level3">
-<h3>5.3 SPECIAL MAC</h3>
-<p>Ceux qui sont sur MAC obtiennent des résultats différents avec la
-seed 123.</p>
+<p>Cette année, j’ai facilité la tâche en écrivant des fonctions dédiées
+dans le package <code>bioregion</code> ʕ•́ᴥ•̀ʔっ. Moins de code, plus de
+temps pour l’interprétation des résultats !</p>
+<p><strong>Question :</strong> Faites la carte au niveau 2 (deuxième
+partition) pour fishdb1.</p>
+<div id="assigner-une-couleur-à-chaque-région" class="section level2">
+<h2>5.1 Assigner une couleur à chaque région</h2>
+<p>En première étape, on va assigner une couleur à chaque cluster
+directement dans l’objet de cluster. Pourquoi faire ça ? Parce que ça
+nous permettra de garder les mêmes couleurs entre toutes nos
+visualisations : cartes, réseau, graphiques divers. Ca facilite
+énormément l’interprétation des résultats.</p>
+<p><strong>Nouveauté octobre 2025</strong> : utilisez
+<code>bioregion_colors()</code> pour générer une palette de couleurs
+distinctes pour chaque cluster.</p>
+<p>Comment utiliser cette fonction ? Vous l’appliquez sur votre objet de
+clusters. Par exemple, pour fishdb1, ça donne :</p>
+<pre class="r"><code>fishdb1 &lt;- bioregion_colors(fishdb1) # Cette fonction retourne le même objet, augmenté avec les couleurs en plus</code></pre>
 </div>
-</div>
-<div id="ajouter-les-couleurs-dans-le-tableau-des-clusters" class="section level2">
-<h2>5.2 Ajouter les couleurs dans le tableau des clusters</h2>
-<p>Une fois que l’on a un tableau avec des palettes de couleurs pour
-chaque cluster, on peut remplir notre objet spatial avec les clusters et
-les couleurs. Pour cela il va falloir utiliser la commande
-<code>match()</code>, indispensable en programmation, mais si difficile
-à comprendre la première fois ! Et en plus vous allez devoir l’utiliser
-deux fois (╬ Ò﹏Ó)</p>
-<p>Voici une explication visuelle :</p>
-<p><strong>tableau 1 (bioregions1)</strong></p>
-<table>
-<thead>
-<tr class="header">
-<th>Cluster</th>
-<th align="center">colors</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1.4</td>
-<td align="center">Red</td>
-</tr>
-<tr class="even">
-<td>1.1</td>
-<td align="center">Green</td>
-</tr>
-<tr class="odd">
-<td>1.2</td>
-<td align="center">Blue</td>
-</tr>
-<tr class="even">
-<td>2.1</td>
-<td align="center">Violet</td>
-</tr>
-</tbody>
-</table>
-<p><strong>tableau 2 (clusters1)</strong></p>
-<table>
-<thead>
-<tr class="header">
-<th>ID</th>
-<th align="center">Cluster</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Basin1</td>
-<td align="center">1.1</td>
-</tr>
-<tr class="even">
-<td>Basin2</td>
-<td align="center">1.1</td>
-</tr>
-<tr class="odd">
-<td>Basin3</td>
-<td align="center">1.2</td>
-</tr>
-<tr class="even">
-<td>Basin4</td>
-<td align="center">2.1</td>
-</tr>
-<tr class="odd">
-<td>Basin5</td>
-<td align="center">1.1</td>
-</tr>
-<tr class="even">
-<td>…</td>
-<td align="center">…</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>clusters1$colors &lt;- bioregions1$colors[match(clusters1$Cluster, bioregions1$Cluster)]</code></pre>
-<p><strong>Résultat : une nouvelle colonne ‘colors’ dans
-clusters</strong></p>
-<table>
-<thead>
-<tr class="header">
-<th>ID</th>
-<th align="center">Cluster</th>
-<th align="center">colors</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Basin1</td>
-<td align="center">1.1</td>
-<td align="center">Green</td>
-</tr>
-<tr class="even">
-<td>Basin2</td>
-<td align="center">1.1</td>
-<td align="center">Green</td>
-</tr>
-<tr class="odd">
-<td>Basin3</td>
-<td align="center">1.2</td>
-<td align="center">Blue</td>
-</tr>
-<tr class="even">
-<td>Basin4</td>
-<td align="center">2.1</td>
-<td align="center">Violet</td>
-</tr>
-<tr class="odd">
-<td>Basin5</td>
-<td align="center">1.1</td>
-<td align="center">Green</td>
-</tr>
-<tr class="even">
-<td>…</td>
-<td align="center">…</td>
-<td align="center">…</td>
-</tr>
-</tbody>
-</table>
-<p>Que s’est-il passé dans cette commande maléfique ? Décomposons
-la.</p>
-<ol style="list-style-type: decimal">
-<li><p><strong>Extraction des couleurs :</strong> La première partie
-<code>bioregions1$colors</code> extrait la colonne des couleurs du
-tableau <code>bioregions1</code>.</p></li>
-<li><p><strong>Correspondance des clusters avec <code>match()</code>
-:</strong> La fonction <code>match()</code> compare les valeurs de
-<code>clusters1$Cluster</code> avec celles de
-<code>bioregions1$Cluster</code>. Elle renvoie la position des clusters
-de <code>clusters1</code> dans <code>bioregions1</code>. Par exemple, si
-<code>clusters1$Cluster</code> contient 1.1, <code>match()</code>
-retournera 2 car 1.1 est en 2ème position dans
-<code>bioregions1</code>.</p></li>
-<li><p><strong>Utilisation des crochets pour extraire les couleurs
-:</strong> Ensuite, nous utilisons ces positions pour récupérer les
-couleurs correspondantes. Par exemple, pour le cluster 1.1,
-<code>match()</code> renvoie 2, donc la couleur “Green” (qui est en
-position 2 dans <code>bioregions1</code>) est associée à toutes les
-lignes de <code>clusters1</code> avec le cluster 1.1.</p></li>
-</ol>
-<p>Ca prend un peu de temps de se familiariser avec
-<code>match()</code>, mais ça va venir, persévérez - c’est un des outils
-les plus utiles en R car vous pouvez faire correspondre des données
-issues de tableaux très différents.</p>
-<p>Allez-y, utilisez maintenant <code>match()</code> pour ajouter les
-couleurs depuis bioregions vers votre tableau des clusters.</p>
-<pre class="r"><code>clusters1$color &lt;- bioregions1$colors[match(clusters1[, 3],
-                                            bioregions1$clusters)]</code></pre>
-<p>Vérifiez que ça a fonctionné en inspectant les premières lignes du
-tableau.</p>
-</div>
-<div id="ajouter-les-couleurs-dans-lobjet-spatial-pour-faire-la-carte" class="section level2">
-<h2>5.3 Ajouter les couleurs dans l’objet spatial pour faire la
-carte</h2>
-<p>Maintenant, à vous de jouer : ajoutez les couleurs (colonne color de
-votre tableau de clusters), dans l’objet sf qui contient les polygones
-pour faire la carte ! Mais il va falloir les mettre dans le bon ordre.
-Si vous regardez cet objet sf, vous verrez qu’il a une colonne appelée
-“BasinName”, sur laquelle vous pouvez faire la correspondance avec la
-colonne “ID” de votre objet de clusters.</p>
-<p>Ensuite, il ne vous restera qu’à utiliser <code>plot()</code> en lui
-indiquant la colonne colors dans l’argument <code>col</code> !</p>
-<p>Bravo, vous avez fait vos premiers <code>match()</code> !!</p>
+<div id="faire-la-carte" class="section level2">
+<h2>5.2 Faire la carte</h2>
+<p>Vous y êtes presque ! Maintenant, il faut utiliser
+<code>map_bioregions()</code> pour faire la carte. Cette fonction prend
+en entrée : * les clusters (avec les couleurs assignées) : argument
+<code>clusters</code> * les polygones spatialisés des bassins : argument
+<code>geometry</code> * le niveau hiérarchique à afficher (par défaut le
+plus bas, mais ici on veut le niveau 2) : argument
+<code>bioregionalization</code></p>
 </div>
 </div>
 <div id="ecrire-le-réseau-biogéographique-pour-gephi" class="section level1">
 <h1>6. Ecrire le réseau biogéographique pour Gephi</h1>
 <p>Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier
 sur le disque dans un format particulier, en .gdf. C’est une opération
-assez complexe à réaliser, et il n’existe pas encore de fonction dans
-<code>bioregion</code>, donc j’ai écrit un draft de fonction pour que
-vous puissiez le faire dans ce TP.</p>
-<p>Vous pouvez installer cette fonction avec la commande suivante :</p>
-<pre class="r"><code>devtools::source_url(&quot;https://raw.githubusercontent.com/Farewe/Cours_Bioregionalisation/master/scripts/exportGDF.R&quot;)</code></pre>
-<p>La fonction sera chargée dans la mémoire de R avec le nom
-<code>exportGDF()</code>. Il n’y évidemment pas encore d’aide pour cette
-fonction car je ne l’ai implémentée dans aucun package. Voici donc une
-indication de comment elle doit fonctionner :</p>
-<ul>
-<li>argument <code>network</code> : votre réseau (fishdb1 ou 2)</li>
-<li>argument <code>clusters</code> : votre tableau de clusters</li>
-<li>argument <code>filename</code> : le nom du fichier à écrire sur le
-disque en .GDF</li>
-<li>argument <code>weight</code> : à préciser s’il s’agit d’un réseau
-pondéré ou non pondéré</li>
-<li>argument <code>color.field</code> : indiquer le nom de la colonne
-qui contient les couleurs dans votre tableau de clusters</li>
-</ul>
+assez complexe à réaliser, mais <strong>nouveauté octobre 2025</strong>
+: j’ai écrit une fonction pour vous faciliter la vie !</p>
+<p>Utilisez <code>exportGDF()</code> pour écrire le fichier .gdf. Pensez
+à regarder l’aide si besoin pour l’utiliser correctement avec
+<code>?exportGDF</code>.</p>
 </div>
 <div id="analysez-le-réseau-biogéographique-sous-gephi" class="section level1">
 <h1>7. Analysez le réseau biogéographique sous gephi</h1>
-<p>Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez
+<p>Analysez le réseau avec le fichier écrit à l’étape 6. Spatialisez
 votre réseau avec l’algorithme force atlas 2. Ajustez la taille de vos
 noeuds selon leur « degré » (<em>Aspect</em> &gt; <em>Noeuds</em> &gt;
 <em>Ranking</em> &gt; liste déroulante : <em>degré</em> - essayer
@@ -888,8 +727,22 @@ seulement</strong>, et comparez les graphes et les cartes.</p>
 <p><strong>Qu’est-ce qui peut expliquer la différence entre les deux
 bases de données ?</strong></p>
 </div>
+<div id="calculer-des-métriques-sur-les-clusters-telles-que-le-taux-dendémisme" class="section level1">
+<h1>9. Calculer des métriques sur les clusters, telles que le taux
+d’endémisme</h1>
+<p>Utilisez la fonction <code>bioregionalization_metrics()</code> pour
+calculer les métriques d’endémisme. Rappel : l’aide est disponible avec
+<code>?bioregionalization_metrics</code>. Précisez ici que vous ne
+souhaitez que les métriques d’endémisme (i.e.,
+<code>eval_metric = c(&quot;avg_endemism&quot;, &quot;tot_endemism&quot;)</code>).</p>
+<p>Comparez le résultat entre les deux bases de données sur l’endémisme
+moyen par région (= nombre moyen d’espèces endémiques par site) et le
+total d’espèces endémiques par région. Les résultats sont dans le slot
+<code>evaluation_df</code> de l’objet retourné par
+<code>bioregionalization_metrics()</code>.</p>
+</div>
 <div id="facultatif-faites-une-belle-carte-ʕᴥʔ" class="section level1">
-<h1>9. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ</h1>
+<h1>10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ</h1>
 <p>Si vous avez terminé en avance, vous pouvez essayer de faire une
 belle carte :</p>
 <ul>

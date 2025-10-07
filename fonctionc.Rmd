@@ -5,17 +5,18 @@ output: html_document
 editor_options: 
   chunk_output_type: inline
 ---
+
+**ATTENTION** ce document n'est plus à jour
+
 # Chargez les packages
 
 
 
 ```{r echo=TRUE,message=FALSE,warning=FALSE}
 library(bioregion)
-library(recluster)
 library(sf)
 library(vegan)
 library(rnaturalearth)
-library(ggplot2)
 ```
 
 # 1. Chargement des données
@@ -44,44 +45,17 @@ matrix_dist <- net_to_mat(dist_subtidal,
 matrix_dist <- as.dist(matrix_dist)
 
 subtidal_nmds <- metaMDS(matrix_dist, center=TRUE)
-
-col_subtidal <- recluster.col(subtidal_nmds$points)
-
-colnames(col_subtidal) <- c("nmdsx", "nmdsy", "nmdsred", "nmdsgreen", "nmdsblue")
-
-sites <- data.frame(sites, 
-               col_subtidal[match(sites$station_id,
-                                  rownames(col_subtidal)), ])
-
-sites <- st_as_sf(sites,
-                  coords = c("X", "Y"),
-                  crs = "EPSG:4326")
-
-
-op <- par(mfrow = c(2, 1), mar = c(4.1, 4.1, 1.1, 1.1))
-recluster.plot.col(col_subtidal)
-
-plot(sites[1],
-     col = rgb(red = sites$nmdsred,
-               green = sites$nmdsgreen,
-               blue = sites$nmdsblue,
-               maxColorValue = 255),
-     pch = 16, cex = .7, reset = FALSE)
-wm <- ne_coastline(scale = 50, returnclass = "sf")
-plot(wm[1], add = TRUE)
+plot(subtidal_nmds)
 ```
 
-Qu'observez-vous sur la NMDS et sur la carte ? Comment est distribuée la diversité beta ? Semble-t-il y avoir un effet spatial ou pas ? Cet effet est-il le seul ? 
+Qu'observez-vous sur la NMDS ? Comment est distribuée la diversité beta ? Semble-t-il y avoir un effet spatial ou pas ? 
 
 Il semble y avoir un gradient de dissimilarité entre les sites situés autour de la Bretagne. D'une manière générale, plus les sites sont proches spatialement, plus ils semblent similaires. Cependant il y a des exceptions, notamment dans la rade de Brest ou au niveau de Lannion, où des sites très proches semblent parfois être très dissimilaires, ce qui ne peut donc uniquement être expliqué par la proximité spatiale.
-
-Au niveau des couleurs, il apparait que certains sites éloignés spatialement peuvent être similaires (e.g. Ria d'Etel et rade de Brest). Il s'agit de sites partageant des conditions environnementales similaires (eaux turbides).
 
 # 4. Faire la classification ascendante hiérarchique 
 
 ```{r}
-hclust_subtidal <- hclu_hierarclust(dist_subtidal,
-                                    keep_trials = TRUE)
+hclust_subtidal <- hclu_hierarclust(dist_subtidal)
 
 plot(hclust_subtidal)
 ```
@@ -95,64 +69,70 @@ La dissimilarité entre les sites est assez faible, inférieure à 0.4, et plut�
 hclust_subtidal
 ```
 
-La valeur de corrélation cophénétique de l'arbre retenu est assez faible par rapport à celles des arbres individuels. C'est problématique, car cela signifie que les distances de la matrice de distance sont mal représentées dans l'arbre. L'arbre étant une simplification de la matrice de distance, on peut en déduire que cette méthode approche un certain degré de perte d'information qui peut biaiser notre perception des relations entre les sites.
+La valeur de corrélation cophénétique de l'arbre est affichée dans le résumé ci-dessus. Cette valeur indique à quel point l'arbre hiérarchique représente fidèlement les distances originales entre sites. Plus elle est proche de 1, meilleure est la représentation. Dans notre cas, la valeur est assez faible, ce qui indique que l'arbre ne représente pas complètement bien les relations entre les sites.
 
-
-Comparons l'arbre retenu avec l'un des arbres générés aléatoirement (je prends le premier ici, mais si c'est le premier qui a le meilleur coefficient de corrélation cophénétique, dans ce cas prenez le second)
-
-```{r fig.height = 10, fig.width = 16}
-arbre_run1 <- hclust_subtidal$algorithm$trials[[1]]$hierartree
-
-par(mfrow = c(2, 1))
-plot(hclust_subtidal)
-plot(arbre_run1, hang = -1)
-```
-
-Dans l'ensemble, les sites restent à peu près groupés de la même manière en bas de l'arbre. Par contre, les groupes de sites ne se relient pas aux mêmes endroits entre les deux arbres. Cela suggère que choisir l'un des deux arbres présente un certain degré d'arbitrarité qui est problématique, car le critère de choix entre les deux arbres (le coefficient de corrélation cophénétique) montre que les deux arbres sont quasiment équivalents en qualité de représentation de la matrice de distance. 
-
-```{r}
-# Coeff de l'arbre 'optimal'
-hclust_subtidal$algorithm$final.tree.coph.cor
-# Coeff du premier arbre
-hclust_subtidal$algorithm$trials[[1]]$cophcor
-```
+L'arbre étant une simplification de la matrice de distance, il existe toujours un certain degré de perte d'information, mais l'algorithme IHCT minimise cette perte en construisant un arbre consensus robuste basé sur la décision majoritaire à travers de nombreuses randomisations.
 
 # 6. Rechercher la hauteur à laquelle couper l'arbre
 
 ```{r}
 hclust_subtidal <- cut_tree(hclust_subtidal,
                             n_clust = 2:50)
-hclust_subtidal
+summary(hclust_subtidal)
 ```
 
 ```{r}
-eval_partitions <- partition_metrics(hclust_subtidal,
+eval_partitions <- bioregionalization_metrics(hclust_subtidal,
                                      dissimilarity = dist_subtidal,
                                      eval_metric = "pc_distance")
 
-optimal_partition_subtidal <- find_optimal_n(eval_partitions, criterion = "cutoff", 
-                                             metric_cutoffs = .50)
+# Tester trois seuils : 40%, 50% et 60%
+optimal_40 <- find_optimal_n(eval_partitions, criterion = "cutoff", 
+                             metric_cutoffs = 0.40)
+optimal_50 <- find_optimal_n(eval_partitions, criterion = "cutoff", 
+                             metric_cutoffs = 0.50)
+optimal_60 <- find_optimal_n(eval_partitions, criterion = "cutoff", 
+                             metric_cutoffs = 0.60)
+
+cat("Seuil 40% :", optimal_40$optimal_nb_clusters$pc_distance, "clusters\n")
+cat("Seuil 50% :", optimal_50$optimal_nb_clusters$pc_distance, "clusters\n")
+cat("Seuil 60% :", optimal_60$optimal_nb_clusters$pc_distance, "clusters\n")
+
 
 hclust_subtidal <- cut_tree(hclust_subtidal,
-                            n_clust = optimal_partition_subtidal$optimal_nb_clusters$pc_distance)
+                            n_clust = c(optimal_40$optimal_nb_clusters$pc_distance,
+                                optimal_50$optimal_nb_clusters$pc_distance,
+                                optimal_60$optimal_nb_clusters$pc_distance))
 
+summary(hclust_subtidal)
 ```
 
-Dans mon cas ici, j'ai `r optimal_partition_subtidal$optimal_nb_clusters$pc_distance` clusters, et la hauteur de coupe est de `r round(cut_tree(hclust_subtidal, n_clust = optimal_partition_subtidal$optimal_nb_clusters$pc_distance)$cluster_info$output_cut_height, 3)`
+Avec le seuil à 50%, nous obtenons `r optimal_50$optimal_nb_clusters$pc_distance` clusters, et la hauteur de coupe est de `r round(hclust_subtidal$cluster_info$output_cut_height, 3)`. La fonction `summary()` permet d'afficher la hiérarchie des clusters de manière claire.
 
 
 
 # 7. Faire la carte des clusters obtenus
 
 ```{r}
-sites$clusters <- hclust_subtidal$clusters[match(sites$station_id,
-                                                 hclust_subtidal$clusters$ID), 2]
-ggplot() +
-  geom_sf(data = sites, aes(col = clusters)) +
-  geom_sf(data = wm) +
-  scale_color_discrete() +
-  xlim(-5, -1) + ylim(47, 49.5)
+# Transformer les sites en objet sf
+sites_sf <- st_as_sf(sites,
+                     coords = c("X", "Y"),
+                     crs = "EPSG:4326")
 
+# Ajouter automatiquement des couleurs aux clusters
+hclust_colored <- bioregion_colors(hclust_subtidal, 
+                                   palette = "Vivid",
+                                   cluster_ordering = "n_sites")
+
+# Créer la carte avec map_bioregions
+# Mettez scale = 50 dans la ligne ci-dessous si vous n'arrivez pas à lancer la commande
+wm <- ne_coastline(scale = 10, returnclass = "sf")
+map_bioregions(hclust_colored, sites_sf, bioregionalization = 1,
+               reset = FALSE,
+               pch = 16)
+
+# Ajouter le trait de côte
+plot(wm[1], add = TRUE)
 ```
 
 Décrivez le résultat que vous obtenez : 

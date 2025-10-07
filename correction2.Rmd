@@ -7,9 +7,11 @@ editor_options:
 ---
 
 
-# 0. Installation de bioregion 
+
 
 ```{r message=FALSE, warning=FALSE}
+# pak::pkg_install("bioRgeo/bioregion", ask = TRUE)   
+
 library(bioregion)
 install_binaries(binpath = "c:/r")
 ```
@@ -20,7 +22,6 @@ install_binaries(binpath = "c:/r")
 ```{r}
 # Packages
 library(bioregion)
-# library(biogeonetworks)
 library(sf)
 library(plyr)
 library(RColorBrewer)
@@ -37,7 +38,7 @@ fishdb2 <- readRDS("./data/data_cours/fishdb2.RDS")
 ```
 
 
-# 2. Rechercher les clusters sur le réseau
+# 3. Rechercher les clusters sur le réseau
 
 ```{r}
 
@@ -54,7 +55,7 @@ fish_clusters1 <- netclu_infomap(net = fishdb1,
 ```
 
 
-# 2. Première lecture et interprétation du résultat
+# 3.2. Première lecture et interprétation du résultat
 
 ```{r}
 fish_clusters1
@@ -68,91 +69,96 @@ Il y a `r nrow(fish_clusters1$cluster_info)` niveaux. Au premier niveau, il y a 
 **Question** : combien y a-t-il de sites et d'espèces par cluster pour la première partition ? Qu'en déduisez-vous pour les régions biogéographiques ? 
 
 ```{r}
-plyr::count(fish_clusters1$clusters[, 2])
+summary(fish_clusters1)
 ```
 Il y a deux clusters principaux avec près de 6000 noeuds (ce sont des super-régions), et un tout petit cluster de 15 noeuds.
 
+Pour le deuxième niveau :
+4 clusters principaux (4 grandes régions) dans le cluster 1, 2 clusters principaux dans le cluster 2, et toujours notre petit cluster marginal.
 
-Faites la même analyse pour la deuxième partition (= deuxième niveau hiérarchique).
 
+# 4. Analyser séparément les sites et les espèces
+
+**Question :**
+Faites un histogramme du nombre de sites par cluster dans les deux premières partitions.
+Faites la même pour le nombre d'espèces par cluster.
+
+
+La commande summary donne déjà cette information, mais on peut aussi l'obtenir avec la fonction `count` du package `plyr`.
 ```{r}
-plyr::count(fish_clusters1$clusters[, 3])
-```
-Il y a six clusters principaux (six grandes régions), et toujours notre petit cluster marginal.
-
-
-# 3. Analyser séparément les sites et les espèces
-
-**Question** Combien y a-t-il de sites par cluster dans les deux premières partitions ?
-```{r}
+library(ggplot2)
 clusters1 <- fish_clusters1$clusters
 site_clusters1 <- clusters1[which(clusters1$ID %in% fishdb1$Basin), ]
-plyr::count(site_clusters1[2])
-plyr::count(site_clusters1[3])
+sites_p1 <- plyr::count(site_clusters1[2])
+ggplot(sites_p1, aes(x = K_3, y = freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Cluster", y = "Nombre de sites") +
+  theme_minimal() +
+  ggtitle("Nombre de site par clusters - niveau 1")
+
+sites_p2 <- plyr::count(site_clusters1[3])
+ggplot(sites_p2, aes(x = K_7, y = freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Cluster", y = "Nombre de sites") +
+  theme_minimal() +
+  ggtitle("Nombre de site par clusters - niveau 2")
+
 ```
 On voit que les 2 grands clusters du niveau 1 et les 6 grands clusters du niveau 2 ont tous un grand nombre de sites, comparables en taille. En revanche, le petit cluster n'a qu'un seul site - il s'agit probablement d'une zone avec des espèces endémiques trouvées nulle part ailleurs dans le monde. 
 
 
-**Question** Combien y a-t-il d'espèces par cluster dans les deux premières partitions ?
 ```{r}
 species_clusters1 <- clusters1[which(clusters1$ID %in% fishdb1$Species), ]
-plyr::count(species_clusters1[2])
-plyr::count(species_clusters1[3])
-```
+species_p1 <- plyr::count(species_clusters1[2]) # 2e colonne = première partition / premier niveau
+ggplot(species_p1, aes(x = K_3, y = freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Cluster", y = "Nombre d'espèces") +
+  theme_minimal() +
+  ggtitle("Nombre d'espèces par clusters - niveau 1")
 
+species_p2 <- plyr::count(species_clusters1[3]) # 3e colonne = deuxième partition / second niveau
+ggplot(species_p2, aes(x = K_7, y = freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Cluster", y = "Nombre d'espèces") +
+  theme_minimal() +
+  ggtitle("Nombre d'espèces par clusters - niveau 2")
+
+```
 Les 2 clusters de niveau 1 sont à peu près équilibré en nombre d'espèces, tandis que les clusters de niveau 2 sont plus déséquilibrés : il y a des régions très riches (jusque 4700 espèces), et d'autres très pauvres (seulement 400 espèces).
 
-# 4. Faites une carte des régions
-## 4.1 Créer un tableau avec les couleurs pour chaque cluster
+# 5. Faites une carte des régions
+## 5.1 Assigner une couleur à chaque région
 
 ```{r}
-# On commence par récupérer les noms des clusters de la partition de niveau 2
-# En regardant le tableau des clusters on voit qu'il s'agit de la 3e colonne
-clusters1.lvl2 <- unique(clusters1[, 3])
-clusters1.lvl2
-
-
-# Ensuite, on crée un tableau avec les couleurs sur la deuxième colonne
-bioregions1 <- data.frame(
-  clusters = clusters1.lvl2, # La première colonne contient les clusters
-  # La deuxième colonne contient les couleurs
-  colors = brewer.pal(length(clusters1.lvl2), # On veut autant de couleurs que de clusters
-                      "Set2") # J'ai demandé la palette "Set2" ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
-)
-
-bioregions1
+fish_clusters1 <- bioregion_colors(fish_clusters1,
+                                   palette = "Safe",
+                                   cluster_ordering = "n_both")
 ```
 
 
-## 4.2 Ajouter les couleurs dans le tableau des clusters
+## 5.2 Faire la carte
 
 ```{r}
-clusters1$color1 <- bioregions1$colors[match(clusters1[, 3],
-                                             bioregions1$clusters)]
+map_bioregions(clusters = fish_clusters1,
+               geometry = basins,
+               bioregionalization = 2)
 ```
 
-## 4.3 Ajouter les couleurs dans l'objet spatial pour faire la carte
+# 6. Ecrire le réseau biogéographique pour Gephi
 
 ```{r}
-basins$color1 <- clusters1$color1[match(basins$BasinName,
-                                        clusters1$ID)]
-
-plot(basins[1],
-     col = basins$color1)
+exportGDF(df = fishdb1,
+          col1 = "Basin",
+          col2 = "Species",
+          weight = NULL,
+          bioregions = fish_clusters1,
+          bioregionalization = 2,
+          file = "data/fish1.gdf")
 ```
 
-# 5. Ecrire le réseau sur le disque pour pourvoir le lire sous Gephi
+# 7. Analysez le réseau biogéographique sous gephi
 
-```{r}
-devtools::source_url("https://raw.githubusercontent.com/Farewe/Cours_Bioregionalisation/master/scripts/exportGDF.R")
-
-exportGDF(network = fishdb1,
-          clusters = clusters1,
-          filename = "data/fish1.gdf",
-          weight = FALSE,
-          color.field = "color1")
-```
-
+La visualisation sous Gephi se fait à partir du fichier généré à l'étape 6.
 
 # 8. Refaites l'analyse pour la seconde base de données
 
@@ -169,41 +175,33 @@ fish_clusters2 <- netclu_infomap(net = fishdb2,
                                  seed = 123)
 fish_clusters2
 
-plyr::count(fish_clusters2$clusters[, 2])
+summary(fish_clusters2)
+fish_clusters2 <- bioregion_colors(fish_clusters2,
+                                   palette = "Vivid",
+                                   cluster_ordering = "n_both")
 
-clusters2 <- fish_clusters2$clusters
-site_clusters <- clusters2[which(clusters2$ID %in% fishdb2$Basin), ]
-plyr::count(site_clusters[2])
 
-species_clusters <- clusters2[which(clusters2$ID %in% fishdb1$Species), ]
-plyr::count(species_clusters[2])
+png("comparison_map.png", width = 800, height = 400)
+par(mfrow = c(1,2))
+map_bioregions(clusters = fish_clusters1, 
+               geometry = basins,
+               bioregionalization = 2,
+               main = "fishdb1")
 
-# Couleurs
-clusters2.lvl2 <- unique(clusters2[, 2])
-clusters2.lvl2
 
-bioregions2 <- data.frame(
-  clusters = clusters2.lvl2,
-  colors = brewer.pal(length(clusters2.lvl2), 
-                      "Set3") 
-)
+map_bioregions(clusters = fish_clusters2,
+               geometry = basins,
+               bioregionalization = 1,
+               main = "fishdb2")
+dev.off()
 
-clusters2$color2 <- bioregions2$colors[match(clusters2[, 2],
-                                             bioregions2$clusters)]
-
-basins$color2 <- clusters2$color2[match(basins$BasinName,
-                                        clusters2$ID)]
-
-plot(basins[1],
-     col = basins$color1)
-plot(basins[1],
-     col = basins$color2)
-
-exportGDF(network = fishdb2,
-          clusters = clusters2,
-          filename = "data/fish2.gdf",
-          weight = FALSE,
-          color.field = "color2")
+exportGDF(df = fishdb1,
+          col1 = "Basin",
+          col2 = "Species",
+          weight = NULL,
+          bioregions = fish_clusters1,
+          bioregionalization = 1,
+          file = "data/fish1.gdf")
 ```
 
 **Question**
@@ -212,7 +210,33 @@ Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?
 La différence est due au fait que la base fishdb2 intègre les occurrences d'introduction par l'homme des poissons d'eau douce, ce qui masque les patrons naturels et change la forme des régions biogéographiques de poissons d'eau douce.
 
 
-# 9. (facultatif) Faites une belle carte  ʕ◠ᴥ◠ʔ
+# 9. Calculer et comparer les métriques d'endemisme entre les deux bases de données
+```{r}
+endemism1 <- bioregionalization_metrics(bioregionalization = fish_clusters1,
+                                        net = fishdb1,
+                                        eval_metric = c("avg_endemism", "tot_endemism"))
+
+endemism2 <- bioregionalization_metrics(bioregionalization = fish_clusters2,
+                                        net = fishdb2,
+                                        eval_metric = c("avg_endemism", "tot_endemism"))
+# Endémisme des régions naturelles
+endemism1$evaluation_df
+# Endémisme des régions avec les introductions
+endemism2$evaluation_df
+
+```
+
+On note une diminution très forte de l'endémisme moyen par région (= nombre moyen d'espèces endémiques par site) à cause des introductions d'espèces par l'homme. Le total d'espèces endémiques est aussi plus faible, mais dans une moindre mesure.
+
+Analyse du détail :
+
+```{r}
+# Détail de l'endémisme par région
+endemism1$endemism_results
+```
+
+
+# 10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ
 
 ```{r message=FALSE, warning=FALSE}
 library(lwgeom)
@@ -239,12 +263,33 @@ wm <- st_transform_proj(wm,
 basins <- st_transform_proj(basins, 
                              crs = "+proj=wintri")
 
+basins$color1 <- 
+  fish_clusters1$clusters_colors[
+        match(basins$BasinName, 
+              fish_clusters1$clusters_colors$ID), 3] # couleur du niveau 2
+basins$color2 <- 
+  fish_clusters2$clusters_colors[
+        match(basins$BasinName, 
+              fish_clusters2$clusters_colors$ID), 2] # couleur du niveau 1                                
+
 ggplot() +
   geom_sf(data = gr, color = 'grey', # graticule
           size = .5) +
   geom_sf(data = wm, col = grey(.6), fill = grey(.9), # continents
           size = .2) +
   geom_sf(data = basins, aes(fill = color1), # bassins avec couleurs des régions
+          size = .05) +
+  theme_minimal() + # thème simplifié pour ggplot2
+  coord_sf(datum = NA) + # obligatoire pour pouvoir utiliser les projections de lwgeom
+  scale_fill_identity()  # pour que ggplot utilise bien les couleurs qu'on lui demande
+
+
+ggplot() +
+  geom_sf(data = gr, color = 'grey', # graticule
+          size = .5) +
+  geom_sf(data = wm, col = grey(.6), fill = grey(.9), # continents
+          size = .2) +
+  geom_sf(data = basins, aes(fill = color2), # bassins avec couleurs des régions
           size = .05) +
   theme_minimal() + # thème simplifié pour ggplot2
   coord_sf(datum = NA) + # obligatoire pour pouvoir utiliser les projections de lwgeom

@@ -24,9 +24,21 @@ Ici, vous appliquerez la première des deux approches vues en cours : les résea
 
 ## Installer le package `bioregion` 
 
-Installez le package `bioregion` depuis le CRAN et installez les exécutables des méthodes basées sur les réseaux avec la fonction `install_binaries()`. En effet, plusieurs méthodes de clustering sur les réseaux (dont celle que l'on va utiliser) ne sont pas disponibles sur R et sont basées sur des fichiers exécutables. Heureusement, R peut appeler ces fichiers exécutables et les lancer - c'est ce que fait le package bioregion, à condition que vous ayez bien lancé `install_binaries()`. 
+Le package `bioregion` est disponible sur le CRAN en version stable, mais des versions plus à jour, avec de nouvelles fonctionnalités, sont disponibles sur GitHub.
 
-Un point particulièrement important est de choisir où installer les fichiers exécutables. Je vous suggère de les mettre dans un dossier fixe et simple, par exemple dans un dossier `C:/R` (utilisateurs Windows) ou un dossier `/Users/<nom utilisateur>/Documents/R` (utilisateurs mac - mettez bien votre nom d'utilisateur pour corriger le chemin).
+Pour ce TP, nous allons utiliser une version de `bioregion` qui n'est pas encore sur le CRAN, afin d'inclure des fonctionnalités nouvelles pour vous faciliter la vie !
+
+Pour installer un package depuis GitHub, il faut utiliser le package `pak`. Si vous ne l'avez pas, installez-le avec `install.packages("pak")`. `pak` est un 
+package qui facilite l'installation de packages R depuis des sources qui ne sont pas forcément le CRAN (e.g. GitHub).
+```{r eval = FALSE}
+pak::pkg_install("bioRgeo/bioregion", ask = FALSE)                        
+```
+
+## Installer les exécutables pour les méthodes basées sur les réseaux
+
+Installez les exécutables des méthodes basées sur les réseaux avec la fonction `install_binaries()`. En effet, plusieurs méthodes de clustering sur les réseaux (dont celle que l'on va utiliser) ne sont pas disponibles sur R et sont basées sur des fichiers exécutables. Heureusement, R peut appeler ces fichiers exécutables et les lancer - c'est ce que fait le package bioregion, à condition que vous ayez bien lancé `install_binaries()`. 
+
+Un point particulièrement important est de choisir où installer les fichiers exécutables. Je vous suggère de les mettre dans un dossier fixe et simple, par exemple dans un dossier `C:/R` (utilisateurs Windows) ou un dossier `/Users/<nom utilisateur>/Documents/R` (utilisateurs mac - mettez bien votre nom d'utilisateur pour corriger le chemin). **EVITEZ les espaces dans le chemin de fichier**.
 
 # 1. Chargement des données (bases poissons et polygones spatialisés des bassins)
 
@@ -87,6 +99,8 @@ A partir de là, vous pouvez rechercher les clusters sur la base du réseau en u
 
 * Mettez l'argument `seed = 123` (windows) ou `seed = 3` (MAC). Une "seed" (graine) fixe le point de départ des résultats aléatoires dans un logiciel, pour que tout le monde obtienne les mêmes résultats, même avec de l'aléatoire. Ca permettra que nous ayons tous les mêmes résultats pour le TP. 
 
+N'oubliez pas d'assigner le résultat du clustering à un objet, par exemple `fish_clusters1` pour fishdb1.
+
 ## 3.2. Première lecture et interprétation du résultat
 
 Quand vous tapez le nom de l'objet issu de la clusterisation dans la console, vous obtenez un premier résultat, qui vous donne plusieurs infos :
@@ -98,16 +112,17 @@ Quand vous tapez le nom de l'objet issu de la clusterisation dans la console, vo
 **Question :** combien de niveaux avez-vous ? Combien de clusters à chaque niveau ?
 
 
-Ensuite, inspectez les clusters en eux-mêmes. Pour cela, il faut accéder au tableau qui attribue les clusters aux sites et aux espèces (`<votre objet>$clusters`). Notez comment les clusters ont une notation hiérarchique. Prenons un cas de figure comme ceci :
+Ensuite, inspectez les clusters en eux-mêmes. Pour cela, il faut accéder au tableau qui attribue les clusters aux sites et aux espèces (par exemple, `head(fish_clusters1$clusters)`). Notez comment les clusters ont une notation hiérarchique. Prenons un cas de figure comme ceci :
 
 `Acheloos   1    1.4    1.4.18     1.4.18`
 
 Le site 'Acheloos' appartient au cluster 1 de la première partition, et au cluster 1.4 de la deuxième partition. Le "1.4" signifie _sous-cluster 4 du cluster 1_. On remarque que cette notation continue, et donc au niveau 3 il appartient au sous-sous-cluster 18 du sous-cluster 4 du niveau 1. Ainsi, chaque nouvelle partition reprend les informations de la partition précédente, pour que la hiérarchie soit bien apparente.
 
+Pour visualiser facilement la hiérarchie, utilisez la fonction `summary()` sur votre objet (e.g., `summary(fish_clusters1)`) de clusters. Cette fonction vous donnera un aperçu rapide de la structure hiérarchique et du nombre de sites et d'espèces par cluster. Par défaut, elle ne vous montrera que les 3 premiers niveaux hiérarchiques, et aux maximum 10 éléments par niveau, mais vous pouvez modifier ces paramètres avec `n_bioregionalizations` et `n_top_clusters`.
+
 
 **Question :** combien y a-t-il de sites et d'espèces par cluster pour la première partition ? Qu'en déduisez-vous pour les régions biogéographiques ? 
 
-Pour inspecter le nombre d'espèces et de sites par niveau utilisez la fonction `count` du package `plyr` (permet de compter le nombre de répétitions d’un facteur).
 
 **Question :** Faites la même analyse pour la deuxième partition (= deuxième niveau hiérarchique).
 
@@ -138,139 +153,46 @@ Pensez bien à stocker les infos de clusters des sites et des espèces dans deux
 
 
 **Question :**
-
-Combien y a-t-il de sites par cluster dans les deux premières partitions ?
-Combien y a-t-il d'espèces par cluster dans les deux premières partitions ?
+Faites un graphique (e.g. histogramme, ou autre selon votre préférence) du nombre de sites par cluster dans les deux premières partitions.
+Faites la même pour le nombre d'espèces par cluster.
 
 # 5. Faites une carte des régions
 
-C'est sûrement l'étape qui est la plus utile pour interpréter les clusters : visualiser ces clusters sur une carte. Néanmoins, ce n'est pas une étape si simple à réaliser que ça. En attendant que j'écrive dans le package une fonction qui fera le travail pour vous de manière simple, il va falloir mettre les mains dans le cambouis (×_×)
+Cette année, j'ai facilité la tâche en écrivant des fonctions dédiées dans le package `bioregion` ʕ•́ᴥ•̀ʔっ.
+Moins de code, plus de temps pour l'interprétation des résultats !
 
-Pour faire simple nous n'allons travailler que sur la partition de niveau 2, pas sur la partition de niveau 1. Si vous souhaitez la faire sur d'autres partitions il suffira d'adapter le code.
+**Question :**
+Faites la carte au niveau 2 (deuxième partition) pour fishdb1.
 
-## 5.1 Créer un tableau avec les couleurs pour chaque cluster
+## 5.1 Assigner une couleur à chaque région
 
-Commencez par créer un tableau qui contiendra les clusters, et, pour chaque cluster, une couleur unique. On va utiliser les palettes de [RColorBrewer pour cela](colobrewer2.org), avec la fonction `brewer.pal()`:
+En première étape, on va assigner une couleur à chaque cluster directement dans l'objet de cluster. Pourquoi faire ça ? Parce que ça nous permettra de garder les mêmes couleurs entre toutes nos visualisations : cartes, réseau, graphiques divers. Ca facilite énormément l'interprétation des résultats.
 
+**Nouveauté octobre 2025** : utilisez `bioregion_colors()` pour générer une palette de couleurs distinctes pour chaque cluster. 
+
+Comment utiliser cette fonction ? Vous l'appliquez sur votre objet de clusters. Par exemple, pour les clusters obtenus avec fishdb1, en supposant que vous ayez nommé votre objet `fish_clusters1`, ça donne :
 ```{r eval = FALSE}
-# On commence par récupérer les noms des clusters de la partition de niveau 2
-# En regardant le tableau des clusters on voit qu'il s'agit de la 3e colonne
-clusters1.lvl2 <- unique(clusters1[, 3])
-clusters1.lvl2
-
-
-# Ensuite, on crée un tableau avec les couleurs sur la deuxième colonne
-bioregions1 <- data.frame(
-  clusters = clusters1.lvl2, # La première colonne contient les clusters
-  # La deuxième colonne contient les couleurs
-  colors = brewer.pal(length(clusters1.lvl2), # On veut autant de couleurs que de clusters
-                      "Set2") # J'ai demandé la palette "Set2" ici, allez voir sur colorbrewer2.org pour voir les différents types de palettes existant
-)
-
-bioregions1
-```
-
-### 5.3 SPECIAL MAC
-
-Ceux qui sont sur MAC obtiennent des résultats différents avec la seed 123. 
-
-## 5.2 Ajouter les couleurs dans le tableau des clusters 
-
-
-Une fois que l'on a un tableau avec des palettes de couleurs pour chaque cluster, on peut remplir notre objet spatial avec les clusters et les couleurs.
-Pour cela il va falloir utiliser la commande `match()`, indispensable en programmation, mais si difficile à comprendre la première fois ! Et en plus vous allez devoir l'utiliser deux fois (╬ Ò﹏Ó)
-
-Voici une explication visuelle :
-
-**tableau 1 (bioregions1)**
-
-| Cluster       | colors         | 
-| ------------- |:-------------:| 
-| 1.4           | Red           | 
-| 1.1           | Green         |
-| 1.2           | Blue          |
-| 2.1           | Violet         |
-
-
-**tableau 2 (clusters1)**
-
-| ID            | Cluster       | 
-| ------------- |:-------------:| 
-| Basin1             | 1.1           | 
-| Basin2             | 1.1            |
-| Basin3             | 1.2           |
-| Basin4             | 2.1           |
-| Basin5             | 1.1           |
-| ...             | ...           |
-
-
-```{r eval=FALSE}
-clusters1$colors <- bioregions1$colors[match(clusters1$Cluster, bioregions1$Cluster)]
+fish_clusters1 <- bioregion_colors(fish_clusters1) # Cette fonction retourne le même objet, augmenté avec les couleurs en plus
 ```
 
 
-**Résultat : une nouvelle colonne 'colors' dans clusters**
+## 5.2 Faire la carte 
 
-| ID            | Cluster       | colors     |
-| ------------- |:-------------:| :--------:|
-| Basin1             | 1.1           |  Green    |
-| Basin2             | 1.1            | Green    |
-| Basin3             | 1.2           | Blue          |
-| Basin4             | 2.1           | Violet       |
-| Basin5             | 1.1           | Green    |
-| ...             | ...           |   ...    |
-
-Que s'est-il passé dans cette commande maléfique ? Décomposons la. 
-
-1. **Extraction des couleurs :** La première partie `bioregions1$colors` extrait la colonne des couleurs du tableau `bioregions1`.
-
-2. **Correspondance des clusters avec `match()` :** La fonction `match()` compare les valeurs de `clusters1$Cluster` avec celles de `bioregions1$Cluster`. Elle renvoie la position des clusters de `clusters1` dans `bioregions1`. Par exemple, si `clusters1$Cluster` contient 1.1, `match()` retournera 2 car 1.1 est en 2ème position dans `bioregions1`.
-
-3. **Utilisation des crochets pour extraire les couleurs :** Ensuite, nous utilisons ces positions pour récupérer les couleurs correspondantes. Par exemple, pour le cluster 1.1, `match()` renvoie 2, donc la couleur "Green" (qui est en position 2 dans `bioregions1`) est associée à toutes les lignes de `clusters1` avec le cluster 1.1.
-
-Ca prend un peu de temps de se familiariser avec `match()`, mais ça va venir, persévérez - c'est un des outils les plus utiles en R car vous pouvez faire correspondre des données issues de tableaux très différents.
-
-Allez-y, utilisez maintenant `match()` pour ajouter les couleurs depuis bioregions vers votre tableau des clusters.
-
-```{r eval=FALSE}
-clusters1$color <- bioregions1$colors[match(clusters1[, 3],
-                                            bioregions1$clusters)]
-```
-
-Vérifiez que ça a fonctionné en inspectant les premières lignes du tableau.
-
-
-## 5.3 Ajouter les couleurs dans l'objet spatial pour faire la carte
-
-Maintenant, à vous de jouer : ajoutez les couleurs (colonne color de votre tableau de clusters), dans l'objet sf qui contient les polygones pour faire la carte ! Mais il va falloir les mettre dans le bon ordre. Si vous regardez cet objet sf, vous verrez qu'il a une colonne appelée "BasinName", sur laquelle vous pouvez faire la correspondance avec la colonne "ID" de votre objet de clusters.
-
-Ensuite, il ne vous restera qu'à utiliser `plot()` en lui indiquant la colonne colors dans l'argument `col` !
-
-Bravo, vous avez fait vos premiers `match()` !! 
+Vous y êtes presque ! Maintenant, il faut utiliser `map_bioregions()` pour faire la carte. Cette fonction prend en entrée :
+* les clusters (avec les couleurs assignées) : argument `clusters`
+* les polygones spatialisés des bassins : argument `geometry`
+* le niveau hiérarchique à afficher (par défaut le plus bas, mais ici on veut le niveau 2) : argument `bioregionalization`
 
 
 # 6. Ecrire le réseau biogéographique pour Gephi
 
-Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier sur le disque dans un format particulier, en .gdf. C'est une opération assez complexe à réaliser, et il n'existe pas encore de fonction dans `bioregion`, donc j'ai écrit un draft de fonction pour que vous puissiez le faire dans ce TP.
+Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier sur le disque dans un format particulier, en .gdf. C'est une opération assez complexe à réaliser, mais **nouveauté octobre 2025** : j'ai écrit une fonction pour vous faciliter la vie !
 
-Vous pouvez installer cette fonction avec la commande suivante :
-
-```{r eval=FALSE}
-devtools::source_url("https://raw.githubusercontent.com/Farewe/Cours_Bioregionalisation/master/scripts/exportGDF.R")
-```
-
-La fonction sera chargée dans la mémoire de R avec le nom `exportGDF()`. Il n'y évidemment pas encore d'aide pour cette fonction car je ne l'ai implémentée dans aucun package. Voici donc une indication de comment elle doit fonctionner :
-
-* argument `network` : votre réseau (fishdb1 ou 2)
-* argument `clusters` : votre tableau de clusters
-* argument `filename` : le nom du fichier à écrire sur le disque en .GDF
-* argument `weight` : à préciser s'il s'agit d'un réseau pondéré ou non pondéré
-* argument `color.field` : indiquer le nom de la colonne qui contient les couleurs dans votre tableau de clusters
-
+Utilisez `exportGDF()` pour écrire le fichier .gdf. Pensez à regarder l'aide si besoin pour l'utiliser correctement avec `?exportGDF`.
 
 # 7. Analysez le réseau biogéographique sous gephi
 
-Analysez le réseau avec le fichier écrit à l’étape 8. Spatialisez votre réseau avec l’algorithme force atlas 2. Ajustez la taille de vos noeuds selon leur « degré » (*Aspect* > *Noeuds* > *Ranking* > liste déroulante : *degré* - essayer différentes gammes de valeurs). Affichez les noms des noeuds et ajuster la taille des noms selon la même méthode. Exportez votre graphe dans la fenêtre « *Prévisualisation* » en jouant avec les options.
+Analysez le réseau avec le fichier écrit à l’étape 6. Spatialisez votre réseau avec l’algorithme force atlas 2. Ajustez la taille de vos noeuds selon leur « degré » (*Aspect* > *Noeuds* > *Ranking* > liste déroulante : *degré* - essayer différentes gammes de valeurs). Affichez les noms des noeuds et ajuster la taille des noms selon la même méthode. Exportez votre graphe dans la fenêtre « *Prévisualisation* » en jouant avec les options.
 
 ![](img/gephi.png)
 
@@ -284,7 +206,14 @@ N'oubliez pas l'argument `seed = 123` (Windows) ou `seed = 3` (MAC) dans `netclu
 
 **Qu'est-ce qui peut expliquer la différence entre les deux bases de données ?**
 
-# 9. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ
+# 9. Calculer des métriques sur les clusters, telles que le taux d'endémisme
+
+Utilisez la fonction `bioregionalization_metrics()` pour calculer les métriques d'endémisme.
+Rappel : l'aide est disponible avec `?bioregionalization_metrics`. Précisez ici que vous ne souhaitez que les métriques d'endémisme (i.e., `eval_metric = c("avg_endemism", "tot_endemism")`).
+
+Comparez le résultat entre les deux bases de données sur l'endémisme moyen par région (= nombre moyen d'espèces endémiques par site) et le total d'espèces endémiques par région. Les résultats sont dans le slot `evaluation_df` de l'objet retourné par `bioregionalization_metrics()`.
+
+# 10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ
 
 Si vous avez terminé en avance, vous pouvez essayer de faire une belle carte :
 
