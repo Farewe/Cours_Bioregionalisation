@@ -380,9 +380,9 @@ fonctionnalités, sont disponibles sur GitHub.</p>
 des fonctionnalités nouvelles pour vous faciliter la vie !</p>
 <p>Pour installer un package depuis GitHub, il faut utiliser le package
 <code>pak</code>. Si vous ne l’avez pas, installez-le avec
-<code>install.packages(&quot;remotes&quot;)</code>. <code>pak</code> est un
-package qui facilite l’installation de packages R depuis des sources qui
-ne sont pas forcément le CRAN (e.g. GitHub).</p>
+<code>install.packages(&quot;pak&quot;)</code>. <code>pak</code> est un package
+qui facilite l’installation de packages R depuis des sources qui ne sont
+pas forcément le CRAN (e.g. GitHub).</p>
 <pre class="r"><code>pak::pkg_install(&quot;bioRgeo/bioregion&quot;, ask = FALSE)                        </code></pre>
 </div>
 <div id="installer-les-exécutables-pour-les-méthodes-basées-sur-les-réseaux" class="section level2">
@@ -580,6 +580,8 @@ des résultats aléatoires dans un logiciel, pour que tout le monde
 obtienne les mêmes résultats, même avec de l’aléatoire. Ca permettra que
 nous ayons tous les mêmes résultats pour le TP.</p></li>
 </ul>
+<p>N’oubliez pas d’assigner le résultat du clustering à un objet, par
+exemple <code>fish_clusters1</code> pour fishdb1.</p>
 </div>
 <div id="première-lecture-et-interprétation-du-résultat" class="section level2">
 <h2>3.2. Première lecture et interprétation du résultat</h2>
@@ -601,8 +603,9 @@ supérieurs.</p></li>
 clusters à chaque niveau ?</p>
 <p>Ensuite, inspectez les clusters en eux-mêmes. Pour cela, il faut
 accéder au tableau qui attribue les clusters aux sites et aux espèces
-(<code>&lt;votre objet&gt;$clusters</code>). Notez comment les clusters
-ont une notation hiérarchique. Prenons un cas de figure comme ceci :</p>
+(par exemple, <code>head(fish_clusters1$clusters)</code>). Notez comment
+les clusters ont une notation hiérarchique. Prenons un cas de figure
+comme ceci :</p>
 <p><code>Acheloos   1    1.4    1.4.18     1.4.18</code></p>
 <p>Le site ‘Acheloos’ appartient au cluster 1 de la première partition,
 et au cluster 1.4 de la deuxième partition. Le “1.4” signifie
@@ -612,7 +615,8 @@ sous-cluster 4 du niveau 1. Ainsi, chaque nouvelle partition reprend les
 informations de la partition précédente, pour que la hiérarchie soit
 bien apparente.</p>
 <p>Pour visualiser facilement la hiérarchie, utilisez la fonction
-<code>summary()</code> sur votre objet de clusters. Cette fonction vous
+<code>summary()</code> sur votre objet (e.g.,
+<code>summary(fish_clusters1)</code>) de clusters. Cette fonction vous
 donnera un aperçu rapide de la structure hiérarchique et du nombre de
 sites et d’espèces par cluster. Par défaut, elle ne vous montrera que
 les 3 premiers niveaux hiérarchiques, et aux maximum 10 éléments par
@@ -682,8 +686,10 @@ visualisations : cartes, réseau, graphiques divers. Ca facilite
 <code>bioregion_colors()</code> pour générer une palette de couleurs
 distinctes pour chaque cluster.</p>
 <p>Comment utiliser cette fonction ? Vous l’appliquez sur votre objet de
-clusters. Par exemple, pour fishdb1, ça donne :</p>
-<pre class="r"><code>fishdb1 &lt;- bioregion_colors(fishdb1) # Cette fonction retourne le même objet, augmenté avec les couleurs en plus</code></pre>
+clusters. Par exemple, pour les clusters obtenus avec fishdb1, en
+supposant que vous ayez nommé votre objet <code>fish_clusters1</code>,
+ça donne :</p>
+<pre class="r"><code>fish_clusters1 &lt;- bioregion_colors(fish_clusters1) # Cette fonction retourne le même objet, augmenté avec les couleurs en plus</code></pre>
 </div>
 <div id="faire-la-carte" class="section level2">
 <h2>5.2 Faire la carte</h2>
