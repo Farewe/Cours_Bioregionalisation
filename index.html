@@ -670,9 +670,9 @@ cluster.</p>
 </div>
 <div id="faites-une-carte-des-régions" class="section level1">
 <h1>5. Faites une carte des régions</h1>
-<p>Cette année, j’ai facilité la tâche en écrivant des fonctions dédiées
-dans le package <code>bioregion</code> ʕ•́ᴥ•̀ʔっ. Moins de code, plus de
-temps pour l’interprétation des résultats !</p>
+<p>Cette année, je vous ai facilité la tâche en écrivant des fonctions
+dédiées dans le package <code>bioregion</code> ʕ•́ᴥ•̀ʔっ. Moins de code,
+plus de temps pour l’interprétation des résultats !</p>
 <p><strong>Question :</strong> Faites la carte au niveau 2 (deuxième
 partition) pour fishdb1.</p>
 <div id="assigner-une-couleur-à-chaque-région" class="section level2">
@@ -682,9 +682,8 @@ directement dans l’objet de cluster. Pourquoi faire ça ? Parce que ça
 nous permettra de garder les mêmes couleurs entre toutes nos
 visualisations : cartes, réseau, graphiques divers. Ca facilite
 énormément l’interprétation des résultats.</p>
-<p><strong>Nouveauté octobre 2025</strong> : utilisez
-<code>bioregion_colors()</code> pour générer une palette de couleurs
-distinctes pour chaque cluster.</p>
+<p>Utilisez <code>bioregion_colors()</code> (nouveauté octobre 2025)
+pour générer une palette de couleurs distinctes pour chaque cluster.</p>
 <p>Comment utiliser cette fonction ? Vous l’appliquez sur votre objet de
 clusters. Par exemple, pour les clusters obtenus avec fishdb1, en
 supposant que vous ayez nommé votre objet <code>fish_clusters1</code>,
@@ -706,8 +705,8 @@ plus bas, mais ici on veut le niveau 2) : argument
 <h1>6. Ecrire le réseau biogéographique pour Gephi</h1>
 <p>Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier
 sur le disque dans un format particulier, en .gdf. C’est une opération
-assez complexe à réaliser, mais <strong>nouveauté octobre 2025</strong>
-: j’ai écrit une fonction pour vous faciliter la vie !</p>
+assez complexe à réaliser, mais une fonction peut désormais le faire
+pour vous (autre nouveauté oct. 2025).</p>
 <p>Utilisez <code>exportGDF()</code> pour écrire le fichier .gdf. Pensez
 à regarder l’aide si besoin pour l’utiliser correctement avec
 <code>?exportGDF</code>.</p>

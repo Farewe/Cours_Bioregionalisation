@@ -158,7 +158,7 @@ Faites la même pour le nombre d'espèces par cluster.
 
 # 5. Faites une carte des régions
 
-Cette année, j'ai facilité la tâche en écrivant des fonctions dédiées dans le package `bioregion` ʕ•́ᴥ•̀ʔっ.
+Cette année, je vous ai facilité la tâche en écrivant des fonctions dédiées dans le package `bioregion` ʕ•́ᴥ•̀ʔっ.
 Moins de code, plus de temps pour l'interprétation des résultats !
 
 **Question :**
@@ -168,7 +168,7 @@ Faites la carte au niveau 2 (deuxième partition) pour fishdb1.
 
 En première étape, on va assigner une couleur à chaque cluster directement dans l'objet de cluster. Pourquoi faire ça ? Parce que ça nous permettra de garder les mêmes couleurs entre toutes nos visualisations : cartes, réseau, graphiques divers. Ca facilite énormément l'interprétation des résultats.
 
-**Nouveauté octobre 2025** : utilisez `bioregion_colors()` pour générer une palette de couleurs distinctes pour chaque cluster. 
+Utilisez `bioregion_colors()` (nouveauté octobre 2025) pour générer une palette de couleurs distinctes pour chaque cluster. 
 
 Comment utiliser cette fonction ? Vous l'appliquez sur votre objet de clusters. Par exemple, pour les clusters obtenus avec fishdb1, en supposant que vous ayez nommé votre objet `fish_clusters1`, ça donne :
 ```{r eval = FALSE}
@@ -186,7 +186,7 @@ Vous y êtes presque ! Maintenant, il faut utiliser `map_bioregions()` pour fair
 
 # 6. Ecrire le réseau biogéographique pour Gephi
 
-Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier sur le disque dans un format particulier, en .gdf. C'est une opération assez complexe à réaliser, mais **nouveauté octobre 2025** : j'ai écrit une fonction pour vous faciliter la vie !
+Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier sur le disque dans un format particulier, en .gdf. C'est une opération assez complexe à réaliser, mais une fonction peut désormais le faire pour vous (autre nouveauté oct. 2025).
 
 Utilisez `exportGDF()` pour écrire le fichier .gdf. Pensez à regarder l'aide si besoin pour l'utiliser correctement avec `?exportGDF`.
 
