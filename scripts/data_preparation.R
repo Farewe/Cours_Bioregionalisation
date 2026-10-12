@@ -47,6 +47,8 @@ fishdb2 <- droplevels(fish.all[, c(1, 2)])
 
 names(fishdb1) <- names(fishdb2) <- c("Basin", "Species")
 
+# fishdb2 <- fishdb2[-which(fishdb2$BasinName %in% c("Calleguas.creek", "San.Diego")), ]
+
 save(fishdb1, file = "./data/data_cours/fishdb1.RData")
 save(fishdb2, file = "./data/data_cours/fishdb2.RData")
 

@@ -139,9 +139,9 @@ fish_clusters1 <- bioregion_colors(fish_clusters1,
 ## 5.2 Faire la carte
 
 ```{r}
-map_bioregions(clusters = fish_clusters1,
-               geometry = basins,
-               bioregionalization = 2)
+map_bioregions(bioregionalization = fish_clusters1,
+               map = basins,
+               partition_index = 3)
 ```
 
 # 6. Ecrire le réseau biogéographique pour Gephi
@@ -183,15 +183,15 @@ fish_clusters2 <- bioregion_colors(fish_clusters2,
 
 png("comparison_map.png", width = 800, height = 400)
 par(mfrow = c(1,2))
-map_bioregions(clusters = fish_clusters1, 
-               geometry = basins,
-               bioregionalization = 2,
+map_bioregions(bioregionalization = fish_clusters1, 
+               map = basins,
+               partition_index = 2,
                main = "fishdb1")
 
 
-map_bioregions(clusters = fish_clusters2,
-               geometry = basins,
-               bioregionalization = 1,
+map_bioregions(bioregionalization = fish_clusters2,
+               map = basins,
+               partition_index = 2,
                main = "fishdb2")
 dev.off()
 

@@ -179,9 +179,9 @@ fish_clusters1 <- bioregion_colors(fish_clusters1) # Cette fonction retourne le 
 ## 5.2 Faire la carte 
 
 Vous y êtes presque ! Maintenant, il faut utiliser `map_bioregions()` pour faire la carte. Cette fonction prend en entrée :
-* les clusters (avec les couleurs assignées) : argument `clusters`
-* les polygones spatialisés des bassins : argument `geometry`
-* le niveau hiérarchique à afficher (par défaut le plus bas, mais ici on veut le niveau 2) : argument `bioregionalization`
+* les clusters (avec les couleurs assignées) : argument `bioregionalization`
+* les polygones spatialisés des bassins : argument `map`
+* le niveau hiérarchique à afficher (ici on veut le niveau 2) : argument `partition_index`
 
 
 # 6. Ecrire le réseau biogéographique pour Gephi
