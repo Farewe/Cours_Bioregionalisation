@@ -182,6 +182,9 @@ Vous y êtes presque ! Maintenant, il faut utiliser `map_bioregions()` pour fair
 * les clusters (avec les couleurs assignées) : argument `bioregionalization`
 * les polygones spatialisés des bassins : argument `map`
 * le niveau hiérarchique à afficher (ici on veut le niveau 2) : argument `partition_index`
+  
+  
+**/!\ Attention**, partition_index compte les colonnes, et la première colonne est une colonne identifiant les sites (ID). **L'index du niveau 2 est donc la colonne 3.**
 
 
 # 6. Ecrire le réseau biogéographique pour Gephi
@@ -189,6 +192,8 @@ Vous y êtes presque ! Maintenant, il faut utiliser `map_bioregions()` pour fair
 Pour pouvoir analyser le réseau sous gephi, il faut écrire un fichier sur le disque dans un format particulier, en .gdf. C'est une opération assez complexe à réaliser, mais une fonction peut désormais le faire pour vous (autre nouveauté oct. 2025).
 
 Utilisez `exportGDF()` pour écrire le fichier .gdf. Pensez à regarder l'aide si besoin pour l'utiliser correctement avec `?exportGDF`.
+
+Exportez le niveau 2 de la biorégionalisation.
 
 # 7. Analysez le réseau biogéographique sous gephi
 
@@ -209,9 +214,13 @@ N'oubliez pas l'argument `seed = 123` (Windows) ou `seed = 3` (MAC) dans `netclu
 # 9. Calculer des métriques sur les clusters, telles que le taux d'endémisme
 
 Utilisez la fonction `bioregionalization_metrics()` pour calculer les métriques d'endémisme.
-Rappel : l'aide est disponible avec `?bioregionalization_metrics`. Précisez ici que vous ne souhaitez que les métriques d'endémisme (i.e., `eval_metric = c("avg_endemism", "tot_endemism")`).
+Rappel : l'aide est disponible avec `?bioregionalization_metrics`. Précisez ici que vous ne souhaitez que les métriques d'endémisme (i.e., `eval_metrics = c("mean_endemics", "tot_endemics")`).
 
-Comparez le résultat entre les deux bases de données sur l'endémisme moyen par région (= nombre moyen d'espèces endémiques par site) et le total d'espèces endémiques par région. Les résultats sont dans le slot `evaluation_df` de l'objet retourné par `bioregionalization_metrics()`.
+Cette fonction vous demande la matrice de co-occurrence espèces-sites dans l'argument `comat`. Normalement, jusqu'ici vous avez travaillé avec le format "réseau"/"network" (= data.frame avec deux colonnes, espèces et sites). Pour passer du format "réseau" au format matrice de co-occurrence, utilisez la fonction `net_to_mat()`.
+
+Cette fonction exige aujourd'hui que vous fournissiez un argument `dissimilarity`. C'est un bug car vous n'en avez pas besoin dans votre cas - ajoutez `dissimilarity = NULL` pour contourner le problème.
+
+Comparez le résultat entre les deux bases de données sur l'endémisme moyen par région (= proportion moyenne d'espèces endémiques par biorégion) et la proportion d'espèces endémiques sur le total des espèces.
 
 # 10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ
 

@@ -698,6 +698,9 @@ en entrée : * les clusters (avec les couleurs assignées) : argument
 <code>bioregionalization</code> * les polygones spatialisés des bassins
 : argument <code>map</code> * le niveau hiérarchique à afficher (ici on
 veut le niveau 2) : argument <code>partition_index</code></p>
+<p><strong>/! Attention</strong>, partition_index compte les colonnes,
+et la première colonne est une colonne identifiant les sites (ID).
+<strong>L’index du niveau 2 est donc la colonne 3.</strong></p>
 </div>
 </div>
 <div id="ecrire-le-réseau-biogéographique-pour-gephi" class="section level1">
@@ -709,6 +712,7 @@ pour vous (autre nouveauté oct. 2025).</p>
 <p>Utilisez <code>exportGDF()</code> pour écrire le fichier .gdf. Pensez
 à regarder l’aide si besoin pour l’utiliser correctement avec
 <code>?exportGDF</code>.</p>
+<p>Exportez le niveau 2 de la biorégionalisation.</p>
 </div>
 <div id="analysez-le-réseau-biogéographique-sous-gephi" class="section level1">
 <h1>7. Analysez le réseau biogéographique sous gephi</h1>
@@ -738,12 +742,21 @@ d’endémisme</h1>
 calculer les métriques d’endémisme. Rappel : l’aide est disponible avec
 <code>?bioregionalization_metrics</code>. Précisez ici que vous ne
 souhaitez que les métriques d’endémisme (i.e.,
-<code>eval_metric = c(&quot;avg_endemism&quot;, &quot;tot_endemism&quot;)</code>).</p>
+<code>eval_metrics = c(&quot;mean_endemics&quot;, &quot;tot_endemics&quot;)</code>).</p>
+<p>Cette fonction vous demande la matrice de co-occurrence espèces-sites
+dans l’argument <code>comat</code>. Normalement, jusqu’ici vous avez
+travaillé avec le format “réseau”/“network” (= data.frame avec deux
+colonnes, espèces et sites). Pour passer du format “réseau” au format
+matrice de co-occurrence, utilisez la fonction
+<code>net_to_mat()</code>.</p>
+<p>Cette fonction exige aujourd’hui que vous fournissiez un argument
+<code>dissimilarity</code>. C’est un bug car vous n’en avez pas besoin
+dans votre cas - ajoutez <code>dissimilarity = NULL</code> pour
+contourner le problème.</p>
 <p>Comparez le résultat entre les deux bases de données sur l’endémisme
-moyen par région (= nombre moyen d’espèces endémiques par site) et le
-total d’espèces endémiques par région. Les résultats sont dans le slot
-<code>evaluation_df</code> de l’objet retourné par
-<code>bioregionalization_metrics()</code>.</p>
+moyen par région (= proportion moyenne d’espèces endémiques par
+biorégion) et la proportion d’espèces endémiques sur le total des
+espèces.</p>
 </div>
 <div id="facultatif-faites-une-belle-carte-ʕᴥʔ" class="section level1">
 <h1>10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ</h1>

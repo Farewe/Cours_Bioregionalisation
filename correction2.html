@@ -800,14 +800,14 @@ map_bioregions(bioregionalization = fish_clusters2,
 dev.off()</code></pre>
 <pre><code>## png 
 ##   2</code></pre>
-<pre class="r"><code>exportGDF(df = fishdb1,
+<pre class="r"><code>exportGDF(df = fishdb2,
           col1 = &quot;Basin&quot;,
           col2 = &quot;Species&quot;,
           weight = NULL,
-          bioregions = fish_clusters1,
+          bioregions = fish_clusters2,
           bioregionalization = 1,
-          file = &quot;data/fish1.gdf&quot;)</code></pre>
-<pre><code>## Using partition 1 (&#39;K_3&#39;) for cluster assignments and colors.</code></pre>
+          file = &quot;data/fish2.gdf&quot;)</code></pre>
+<pre><code>## Using partition 1 (&#39;K_4&#39;) for cluster assignments and colors.</code></pre>
 <p><strong>Question</strong> Qu’est-ce qui peut expliquer la différence
 entre les deux bases de données ?</p>
 <p>La différence est due au fait que la base fishdb2 intègre les
@@ -844,9 +844,9 @@ endemism2</code></pre>
 ## K_94      K_94           94     0.3119671    0.6631922
 ## K_99      K_99           99     0.3029538    0.6456993</code></pre>
 <p>On note une diminution très forte de l’endémisme moyen par région (=
-nombre moyen d’espèces endémiques par site) à cause des introductions
-d’espèces par l’homme. Le total d’espèces endémiques est aussi plus
-faible, mais dans une moindre mesure.</p>
+proportion moyenne d’espèces endémiques par biorégion) à cause des
+introductions d’espèces par l’homme. La proportion totale d’espèces
+endémiques est aussi plus faible, mais dans une moindre mesure.</p>
 </div>
 <div id="facultatif-faites-une-belle-carte-ʕᴥʔ" class="section level1">
 <h1>10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ</h1>

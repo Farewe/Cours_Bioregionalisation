@@ -193,13 +193,13 @@ map_bioregions(bioregionalization = fish_clusters2,
                main = "fishdb2")
 dev.off()
 
-exportGDF(df = fishdb1,
+exportGDF(df = fishdb2,
           col1 = "Basin",
           col2 = "Species",
           weight = NULL,
-          bioregions = fish_clusters1,
+          bioregions = fish_clusters2,
           bioregionalization = 1,
-          file = "data/fish1.gdf")
+          file = "data/fish2.gdf")
 ```
 
 **Question**
@@ -228,8 +228,7 @@ endemism2
 
 ```
 
-On note une diminution très forte de l'endémisme moyen par région (= nombre moyen d'espèces endémiques par site) à cause des introductions d'espèces par l'homme. Le total d'espèces endémiques est aussi plus faible, mais dans une moindre mesure.
-
+On note une diminution très forte de l'endémisme moyen par région (= proportion moyenne d'espèces endémiques par biorégion) à cause des introductions d'espèces par l'homme. La proportion totale d'espèces endémiques est aussi plus faible, mais dans une moindre mesure.
 
 # 10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ
 
