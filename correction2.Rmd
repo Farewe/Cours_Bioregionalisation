@@ -3,7 +3,7 @@ title: "TP bioregionalisation avec les réseaux"
 author: "Boris Leroy, UMR BOREA, Muséum National d'Histoire Naturelle"
 output: html_document
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 
@@ -23,8 +23,6 @@ install_binaries(binpath = "c:/r")
 # Packages
 library(bioregion)
 library(sf)
-library(plyr)
-library(RColorBrewer)
 
 # Répertoire de travail
 # setwd("d:/r/projects/Cours_Bioregionalisation/")
@@ -212,28 +210,25 @@ La différence est due au fait que la base fishdb2 intègre les occurrences d'in
 
 # 9. Calculer et comparer les métriques d'endemisme entre les deux bases de données
 ```{r}
+fishmat1 <- net_to_mat(fishdb1)
 endemism1 <- bioregionalization_metrics(bioregionalization = fish_clusters1,
-                                        net = fishdb1,
-                                        eval_metric = c("avg_endemism", "tot_endemism"))
+                                        dissimilarity = NULL,
+                                        comat = fishmat1,
+                                        eval_metrics = c("mean_endemics", "tot_endemics"))
 
+fishmat2 <- net_to_mat(fishdb2)
 endemism2 <- bioregionalization_metrics(bioregionalization = fish_clusters2,
-                                        net = fishdb2,
-                                        eval_metric = c("avg_endemism", "tot_endemism"))
+                                        dissimilarity = NULL,
+                                        comat = fishmat2,
+                                        eval_metrics = c("mean_endemics", "tot_endemics"))
 # Endémisme des régions naturelles
-endemism1$evaluation_df
+endemism1
 # Endémisme des régions avec les introductions
-endemism2$evaluation_df
+endemism2
 
 ```
 
 On note une diminution très forte de l'endémisme moyen par région (= nombre moyen d'espèces endémiques par site) à cause des introductions d'espèces par l'homme. Le total d'espèces endémiques est aussi plus faible, mais dans une moindre mesure.
-
-Analyse du détail :
-
-```{r}
-# Détail de l'endémisme par région
-endemism1$endemism_results
-```
 
 
 # 10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ

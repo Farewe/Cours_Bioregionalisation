@@ -367,10 +367,7 @@ des bassins)</h1>
 library(bioregion)
 library(sf)</code></pre>
 <pre><code>## Linking to GEOS 3.14.1, GDAL 3.12.1, PROJ 9.7.1; sf_use_s2() is TRUE</code></pre>
-<pre class="r"><code>library(plyr)
-library(RColorBrewer)
-
-# Répertoire de travail
+<pre class="r"><code># Répertoire de travail
 # setwd(&quot;d:/r/projects/Cours_Bioregionalisation/&quot;)
 
 # Shapefiles
@@ -821,156 +818,35 @@ biogéographiques de poissons d’eau douce.</p>
 <div id="calculer-et-comparer-les-métriques-dendemisme-entre-les-deux-bases-de-données" class="section level1">
 <h1>9. Calculer et comparer les métriques d’endemisme entre les deux
 bases de données</h1>
-<pre class="r"><code>endemism1 &lt;- bioregionalization_metrics(bioregionalization = fish_clusters1,
-                                        net = fishdb1,
-                                        eval_metric = c(&quot;avg_endemism&quot;, &quot;tot_endemism&quot;))</code></pre>
-<pre><code>## Computing composition-based metrics...</code></pre>
-<pre><code>##   - avg_endemism OK</code></pre>
-<pre><code>##   - tot_endemism OK</code></pre>
-<pre class="r"><code>endemism2 &lt;- bioregionalization_metrics(bioregionalization = fish_clusters2,
-                                        net = fishdb2,
-                                        eval_metric = c(&quot;avg_endemism&quot;, &quot;tot_endemism&quot;))</code></pre>
-<pre><code>## Computing composition-based metrics...</code></pre>
-<pre><code>##   - avg_endemism OK</code></pre>
-<pre><code>##   - tot_endemism OK</code></pre>
-<pre class="r"><code># Endémisme des régions naturelles
-endemism1$evaluation_df</code></pre>
-<pre><code>##           K n_clusters avg_endemism tot_endemism
-## K_3     K_3          3    0.9998790    0.9999093
-## K_7     K_7          7    0.9232105    0.9749773
-## K_83   K_83         83    0.3638454    0.6835902
-## K_113 K_113        113    0.3286474    0.6318223</code></pre>
+<pre class="r"><code>fishmat1 &lt;- net_to_mat(fishdb1)
+endemism1 &lt;- bioregionalization_metrics(bioregionalization = fish_clusters1,
+                                        dissimilarity = NULL,
+                                        comat = fishmat1,
+                                        eval_metrics = c(&quot;mean_endemics&quot;, &quot;tot_endemics&quot;))
+
+fishmat2 &lt;- net_to_mat(fishdb2)
+endemism2 &lt;- bioregionalization_metrics(bioregionalization = fish_clusters2,
+                                        dissimilarity = NULL,
+                                        comat = fishmat2,
+                                        eval_metrics = c(&quot;mean_endemics&quot;, &quot;tot_endemics&quot;))
+# Endémisme des régions naturelles
+endemism1</code></pre>
+<pre><code>##       partition n_bioregions mean_endemics tot_endemics
+## K_3         K_3            3     0.9998790    0.9999093
+## K_7         K_7            7     0.9232105    0.9749773
+## K_83       K_83           83     0.3638454    0.6835902
+## K_113     K_113          113     0.3286474    0.6318223</code></pre>
 <pre class="r"><code># Endémisme des régions avec les introductions
-endemism2$evaluation_df</code></pre>
-<pre><code>##         K n_clusters avg_endemism tot_endemism
-## K_4   K_4          4    0.8627068    0.9895767
-## K_44 K_44         44    0.3799271    0.7393275
-## K_94 K_94         94    0.3119671    0.6631922
-## K_99 K_99         99    0.3029538    0.6456993</code></pre>
+endemism2</code></pre>
+<pre><code>##      partition n_bioregions mean_endemics tot_endemics
+## K_4        K_4            4     0.8627068    0.9895767
+## K_44      K_44           44     0.3799271    0.7393275
+## K_94      K_94           94     0.3119671    0.6631922
+## K_99      K_99           99     0.3029538    0.6456993</code></pre>
 <p>On note une diminution très forte de l’endémisme moyen par région (=
 nombre moyen d’espèces endémiques par site) à cause des introductions
 d’espèces par l’homme. Le total d’espèces endémiques est aussi plus
 faible, mais dans une moindre mesure.</p>
-<p>Analyse du détail :</p>
-<pre class="r"><code># Détail de l&#39;endémisme par région
-endemism1$endemism_results</code></pre>
-<pre><code>## $K_3
-##       K_3     N end_richness pc_endemism
-##    &lt;char&gt; &lt;int&gt;        &lt;int&gt;       &lt;num&gt;
-## 1:      1  5518         5517   0.9998188
-## 2:      2  5499         5498   0.9998181
-## 3:      3    14           14   1.0000000
-## 
-## $K_7
-##       K_7     N end_richness pc_endemism
-##    &lt;char&gt; &lt;int&gt;        &lt;int&gt;       &lt;num&gt;
-## 1:    1.4   444          399   0.8986486
-## 2:    1.1  1846         1608   0.8710726
-## 3:    1.2  2649         2644   0.9981125
-## 4:    2.1  4716         4697   0.9959712
-## 5:    2.2   802          782   0.9750623
-## 6:    1.3   843          610   0.7236062
-## 7:      3    14           14   1.0000000
-## 
-## $K_83
-##       K_83     N end_richness pc_endemism
-##     &lt;char&gt; &lt;int&gt;        &lt;num&gt;       &lt;num&gt;
-##  1: 1.4.20    10            8  0.80000000
-##  2:  1.4.1   146           56  0.38356164
-##  3:  1.1.3   238           91  0.38235294
-##  4:  1.2.1   587          271  0.46166951
-##  5:  2.1.5   205          158  0.77073171
-##  6: 1.4.17    21            4  0.19047619
-##  7:  2.2.1   549          496  0.90346084
-##  8:  1.1.8    34           14  0.41176471
-##  9:  2.2.3    57           43  0.75438596
-## 10:  1.4.3    36           10  0.27777778
-## 11:  2.1.2  2078         1051  0.50577478
-## 12:  1.1.2    64           23  0.35937500
-## 13:  2.2.2   253          193  0.76284585
-## 14: 1.4.12    42            9  0.21428571
-## 15:  1.3.5   135           24  0.17777778
-## 16:  1.1.5   192           30  0.15625000
-## 17:  1.3.1   122           39  0.31967213
-## 18:  1.3.2   211           26  0.12322275
-## 19:  2.1.1   524          148  0.28244275
-## 20: 1.4.14    14            2  0.14285714
-## 21: 2.1.12    55           15  0.27272727
-## 22:  2.1.3   465          154  0.33118280
-## 23:  1.4.2   100           64  0.64000000
-## 24:  1.2.7   156           50  0.32051282
-## 25:  2.1.7   391          257  0.65728900
-## 26:  1.4.4    35           18  0.51428571
-## 27:  1.1.1  1115          793  0.71121076
-## 28:  1.3.3   141            5  0.03546099
-## 29: 2.1.11    34            0  0.00000000
-## 30:  2.1.6   346          146  0.42196532
-## 31:  1.3.9    45           15  0.33333333
-## 32:  1.4.8    24            7  0.29166667
-## 33:  1.2.3   295           93  0.31525424
-## 34: 1.4.16    24            3  0.12500000
-## 35: 2.1.19    69           14  0.20289855
-## 36: 2.1.17    98           43  0.43877551
-## 37:  1.3.6    51           12  0.23529412
-## 38: 2.1.15   105           18  0.17142857
-## 39:  1.2.4   988          455  0.46052632
-## 40: 2.1.18    46           15  0.32608696
-## 41: 1.4.13    35           15  0.42857143
-## 42: 1.4.11    22            4  0.18181818
-## 43: 1.4.15    26           11  0.42307692
-## 44:  1.2.2   505          149  0.29504950
-## 45:  1.4.6    31           25  0.80645161
-## 46: 1.2.10    95           27  0.28421053
-## 47: 2.1.16    91           46  0.50549451
-## 48:  2.1.4  1197          284  0.23725982
-## 49:  1.1.4   438          208  0.47488584
-## 50: 1.2.15    27            5  0.18518519
-## 51: 2.1.14   132            4  0.03030303
-## 52:  1.3.8    82            2  0.02439024
-## 53:  1.4.5    30            5  0.16666667
-## 54:  1.1.7   190           41  0.21578947
-## 55: 2.1.13   135           25  0.18518519
-## 56: 1.2.13    42           11  0.26190476
-## 57:  1.2.8   274          133  0.48540146
-## 58:  1.2.9   194           30  0.15463918
-## 59:  1.2.5   450          353  0.78444444
-## 60: 1.2.12    64            8  0.12500000
-## 61:      3    14           14  1.00000000
-## 62: 1.4.10    32            6  0.18750000
-## 63:  1.4.7    29            6  0.20689655
-## 64: 2.1.20    58           19  0.32758621
-## 65:  2.1.8   970          325  0.33505155
-## 66: 1.4.18    14            6  0.42857143
-## 67: 1.2.11    92           20  0.21739130
-## 68:  1.1.6   266           72  0.27067669
-## 69: 2.1.10   274           91  0.33211679
-## 70:  1.3.7   221           44  0.19909502
-## 71: 1.3.10    53            3  0.05660377
-## 72: 1.2.14    29           18  0.62068966
-## 73:  1.2.6   420          210  0.50000000
-## 74: 2.1.23    33           28  0.84848485
-## 75:  2.1.9   566          174  0.30742049
-## 76: 2.1.21    48            6  0.12500000
-## 77:  1.3.4   567          203  0.35802469
-## 78:  1.4.9    46           32  0.69565217
-## 79: 1.4.19    14            4  0.28571429
-##       K_83     N end_richness pc_endemism
-##     &lt;char&gt; &lt;int&gt;        &lt;num&gt;       &lt;num&gt;
-## 
-## $K_113
-##        K_113     N end_richness pc_endemism
-##       &lt;char&gt; &lt;int&gt;        &lt;num&gt;       &lt;num&gt;
-##   1:  1.4.20    10            8   0.8000000
-##   2:   1.4.1   146           56   0.3835616
-##   3:   1.1.3   238           91   0.3823529
-##   4:   1.2.1   587          271   0.4616695
-##   5: 2.1.5.1   100           38   0.3800000
-##  ---                                       
-## 102:   2.1.9   566          174   0.3074205
-## 103:  2.1.21    48            6   0.1250000
-## 104:   1.3.4   567          203   0.3580247
-## 105:   1.4.9    46           32   0.6956522
-## 106:  1.4.19    14            4   0.2857143</code></pre>
 </div>
 <div id="facultatif-faites-une-belle-carte-ʕᴥʔ" class="section level1">
 <h1>10. (facultatif) Faites une belle carte ʕ◠ᴥ◠ʔ</h1>
