@@ -6,11 +6,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
-**ATTENTION** ce document n'est plus à jour
-
 # Chargez les packages
-
-
 
 ```{r echo=TRUE,message=FALSE,warning=FALSE}
 library(bioregion)
@@ -283,3 +279,7 @@ map_bioregions(bioregionalization = araignees_infomap_50,
                partition_index = 2)
 
 ```
+
+
+
+La méthode des réseaux détecte des clusters cohérents même sur le jeu de données non filtré, malgré beaucoup de bruit dans les données. On observe ainsi des clusters insulaires, différents clusters méditerranéens reflétant divers refuges glaciaires, etc. sans avoir été obligé de filtrer tout le jeu de données. La version filtrée donne des résultats encore plus nets, mais omet beaucoup de zones avec des déficits de connaissance.
