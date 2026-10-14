@@ -1,0 +1,2 @@
+GBIF download key: 0024856-260928105237408
+GBIF Occurrence Download https://doi.org/10.15468/dl.aymym7 Accessed from R via rgbif (https://github.com/ropensci/rgbif) on 2026-10-13

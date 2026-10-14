@@ -6,8 +6,6 @@ editor_options:
   chunk_output_type: inline
 ---
   
-**ATTENTION** ce document n'est plus à jour
-
 # Introduction
   
 Nous allons ici suivre le cadre méthodologique de Kreft & Jetz 2010 (J. Biogeogr.) pour analyser la diversité beta et rechercher des ensembles biogéographiques. Le TP suit donc globalement ce cadre :
@@ -15,29 +13,61 @@ Nous allons ici suivre le cadre méthodologique de Kreft & Jetz 2010 (J. Biogeog
 ![](img/beta framework.png)
 
 
-Vous allez ici travailler sur un jeu de données composé d'invertébrés benthiques échantillonnés sur différents secteurs sur le pourtour de la Bretagne. Votre but est de découvrir s'il y a des groupes de communautés identifiables, et, s'ils existent, essayer de comprendre qu'est-ce qui les explique : distribution géographique ou facteurs locaux ?
+On va travailler sur les régions biogéographiques des araignées de l'Ouest-Paléarctique. Les données proviennent directement du GBIF ([GBIF Occurrence Download, https://doi.org/10.15468/dl.aymym7](https://doi.org/10.15468/dl.aymym7)), et je n'ai appliqué que des règles simples de filtration pour le moment :
 
-![](img/map.png)
+- occurrences des araignées (Araneae) dans l'Ouest-Paléarctique 
 
-Ces données sont issues [d'un travail publié sur la conservation des communautés fixées des tombants rocheux de la Bretagne](https://www.sciencedirect.com/science/article/abs/pii/S1470160X17300602?via%3Dihub).
+- seulement les données avec coordonnées et sans problème géospatial signalé par le GBIF
+
+- occurrences de 1970 à aujourd'hui, avec une incertitude sur les coordonnées inférieure à 10 km (ou non renseignée), en excluant les fossiles et les spécimens vivants en collection
+
+- identifications au rang de l'espèce uniquement (les sous-espèces sont regroupées dans leur espèce, les identifications au genre ou à la famille sont retirées)
+
+Les occurrences ont ensuite été agrégées sur une grille de cellules de 100 km x 100 km (projection équivalente en surface LAEA Europe), en ne conservant que les cellules terrestres, puis transformées en matrice de présence-absence.
+
+
+L'objectif va être de trouver la structure biogéographique des araignées de l'Ouest-Paléarctique en apprenant comment utiliser le clustering sur la diversité beta. Ce sera l'occasion de découvrir que la méthode est très sensible à la qualité des données, et va vous demander de filtrer le jeu de données pour obtenir des résultats corrects.
+
 
 # Chargez les packages
 
 
-Pour ce TP vous avez besoin de trois packages : `bioregion` (calcul de diversité beta et classification), `sf` (manipulation d'objets spatiaux) et `rnaturalearth` (fond de carte).
+Pour ce TP vous avez besoin de deux packages : `bioregion` (calcul de diversité beta et classification) et `sf` (manipulation d'objets spatiaux).
 
 # 1. Chargement des données
 
 Téléchargez les données:
 
-- [Matrice de présence-absence](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/invertebres_benthiques.RDS)
+- [Matrice de présence-absence](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/araignees/araignees_wp_100km_comat.RDS)
 
-- [Localisation des sites](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/sites_invertebresbenthiques.RDS)
+- [Localisation des sites (grille)](https://github.com/Farewe/Cours_Bioregionalisation/raw/master/data/araignees/araignees_wp_100km_sites.RDS)
 
 Chargez la matrice de présence-absence et la localisation des sites en utilisant la commande `readRDS()`. 
 
-Si vous le souhaitez, calculez la richesse spécifique et supprimez les sites à faible richesse spécifique de la base de données.
+## Calcul de la richesse spécifique et filtrage des données
 
+Calculez la richesse spécifique à partir de la matrice présence - absence. Comment faire ? Demandez-vous : que signifie la somme des lignes sur la matrice ? Que signifie la somme des colonnes ? Et donc, comment calculer la richesse ?
+
+
+## Inspection des données : richesse et effort d'échantillonnage 
+
+Une fois que vous avez calculé la richesse manuellement, inspectez votre objet des sites. Vous constaterez qu'il contient déjà la richesse calculée (vérifiez sur les premiers sites que vos calculs sont bons !), ainsi que d'autres infos, notamment le nombre d'occurrences totales, qui est un indicateur de l'effort d'échantillonnage. 
+
+Faites deux cartes :
+
+- la carte de la richesse spécifique
+
+- la carte de l'effort d'échantillonnage
+
+**Question** Que constatez-vous ?
+
+## Filtrez le jeu de données
+
+Créez une copie de la matrice de co-occurrence et des sites en éliminant toutes les cellules à richesse inférieure à 50 (e.g., appelez les `comat_50` et `sites_50`). Vous ferez toutes les analyses suivantes sur ces deux jeux de données en parallèle, afin de voir la différence entre données filtrées et non filtrées.
+
+Comment filtrer un jeu de données ? Il faut donner une condition.
+
+Supposons que `comat` aient les sites ordonnées de la même manière que la richesse calculée `richness` (c'est normalement le cas si vous avez calculé la richesse comme il faut). Dans ce cas, si vous faites `richness > 50`, vous obtenez des valeurs TRUE (si la richesse est supérieure à 50) et FALSE (si la richesse est inférieure ou égale à 50) pour chaque site. Et donc, si vous faites `comat[richness > 50, ]`, vous n'allez garder que les lignes de comat dont la richesse est supérieure à 50. 
 
 # 2. Calcul des distances entre bassins avec l'indice ßsim [3]
 
@@ -47,101 +77,96 @@ où a = nombre d'espèces partagées entre les deux sites; b et c = nombre d'esp
 
 Fonction `dissimilarity()` du package `bioregion`
 
-# 3. Visualisation des distances entres sites
+# 3. Visualisation des distances entres sites (facultatif)
 
-Faites une ordination Non-Metric Dimensional Scaling (NMDS) pour représenter graphiquement les distances entre les sites.
+Etant donné que le jeu de données est assez gros, on va se contenter de la méthode de la 'cellule focale' pour visualiser les distances. 
 
-Pour cela, il vous faudra procéder par étapes. Tout d'abord, transformer l'objet de distances de `bioregion` en matrice de distance avec le code suivant :
+Pour ce faire :
 
-```{r eval = FALSE}
-matrix.dist <- net_to_mat(dist.subtidal,
-                          weight = TRUE, squared = TRUE, symmetrical = TRUE)
-matrix.dist <- as.dist(matrix.dist)
-```
+- transformez les distances qui sont au format data.frame en format matrice. Utilisez `net_to_mat()` pour ça, en précisant que vous gardez bien les poids, et que la matrice doit être carrée et symétrique.
 
-Ensuite, calculer la NMDS sur cette matrice de distance avec la fonction `metaMDS` du package `vegan`, et affichez le graphique avec `plot()`.
+- prenez une cellule au hasard (par exemple en faisant la commande `sample()` qui fait un tirage aléatoire, tirez UN SEUL SITE)
 
-Qu'observez-vous sur la NMDS ? Comment est distribuée la diversité beta ? Semble-t-il y avoir un effet spatial ou pas ? 
+- ne prenez que les éléments de la matrice des distances qui correspondent à votre cellule focale. Comment faire ça ? 
+  
+  - filtrez la matrice pour ne garder qu'une seule ligne, celle qui correspond à votre cellule focale.
 
+  - gardez toutes les colonnes, mais **dans l'ordre des sites de votre objet `sites`**, pour que chaque distance tombe sur la bonne cellule.
+
+  - astuce : les lignes et colonnes de la matrice sont nommées avec les identifiants des sites. Vous pouvez donc filtrer avec `matrice[ligne, colonnes]` en utilisant ces noms, convertis en texte avec `as.character()`.
+
+- stockez le résultat dans une nouvelle colonne de `sites` (par exemple `focal_dist`), puis cartographiez-la avec `plot()`
+
+Si vous galérez trop, sautez cette étape pour le moment, c'est moins important. C'est de la difficulté de programmation, ce n'est pas l'essentiel ici. Quand vous aurez le corrigé vous aurez le loisir de revoir ces lignes en détail.
 
 # 4. Faire la classification ascendante hiérarchique 
 
-Réaliser une classification ascendante hiérarchique avec la méthode UPGMA [6]. Etant donné que l'ordre des sites influence la classification, il faut faire de nombreux arbres  rééchantillonnant de nombreuses fois les noms des sites aléatoirement, et sélectionner le meilleur arbre.  
+Réaliser une classification ascendante hiérarchique avec la méthode UPGMA [6]. Etant donné que l'ordre des sites influence la classification, il faut faire de nombreux arbres rééchantillonnant de nombreuses fois les noms des sites aléatoirement, et sélectionner le meilleur arbre, comme vu pendant le cours.
 
-Pour cela, utilisez la fonction `hclu_hierarclust()` du package `bioregion`, et sélectionnez les paramètres pour respecter les conditions ci-dessus. Pour le moment, contentez-vous de faire la classification ascendante hiérarchique (l'arbre), sans chercher à découper l'arbre pour avoir des clusters.
+Le problème, que si on génère plein d'arbres aléatoirement à partir de la même matrice en changeant juste l'ordre des sites, comment on choisit le meilleur ? Plusieurs méthodes :
 
-**Important :** Le package `bioregion` utilise maintenant par défaut l'algorithme IHCT (Iterative Hierarchical Consensus Tree), qui est une avancée majeure par rapport aux méthodes classiques. Voici pourquoi :
+- en prendre un au pif (je ne vous le recommande pas, mais c'est techniquement ce qui est fait par de nombreux papiers qui ne vérifient pas l'effet de l'ordre des sites...)
 
-- **Le problème des arbres consensus classiques** : L'approche classique (type Dapporto) consistait à construire de nombreux arbres en randomisant l'ordre des sites, puis à calculer un arbre consensus. Cependant, cette méthode produisait souvent des arbres avec une topologie incohérente et un très faible coefficient de corrélation cophénétique, rendant les résultats difficiles à interpréter.
+- choisir le meilleur, avec le **coefficient de corrélation cophénétique**, qui vous dit à quel point la hauteur des noeuds qui relient les sites dans l'arbre est similaire à la distance entre sites dans la matrice initiale (relisez autant de fois qu'il faut cette phrase pour la comprendre ! Faites vous un petit schéma si ça peut vous aider à comprendre). C'est une bonne approche, mais ce n'est pas la meilleure. Elle est très bien pour des analyses rapides et pour des tests.
 
-- **La solution IHCT** : L'algorithme IHCT reconstruit un arbre consensus de manière itérative en divisant progressivement l'ensemble des sites en deux sous-groupes à chaque étape, en se basant sur l'appartenance majoritaire des sites à travers tous les arbres randomisés. Cette approche garantit que chaque branche de l'arbre reflète la décision majoritaire parmi toutes les versions randomisées de la matrice de distance. Le résultat est un arbre consensus bien plus robuste et interprétable.
+- créer un arbre consensus en utilisant les méthodes des phylogénies. **Ca marche très très mal et je ne vous recommande pas cette approche.** Vous obtiendrez souvent un grand rateau qui relie tous les sites au sommet de l'arbre, sans structure hiérarchique.
 
-N'hésitez pas à comparer par vous-même les résultats entre l'ancienne méthode (paramètre `optimal_tree_method = "consensus"`) et la nouvelle méthode IHCT (`optimal_tree_method = "iterative_consensus_tree"`).
+- construire l'arbre du haut vers le bas, en recherchant la meilleure division en branches parmi un grand nombre d'arbres aléatoires. C'est un processus itératif, qui ré-échantillonne les sites restants dans la matrice de distance à chaque nouvelle découpe de l'arbre, permettant de prendre la décision majoritaire à chaque fois. **Je vous recommande cette approche, qui donne les meilleurs résultats.** 
 
-Affichez l'arbre avec `plot()`. Qu'est-ce que l'arbre nous dit des valeurs de dissimilarité ? Regardez les valeurs de dissimilarité sur l'arbre, et réfléchissez à ce qu'elles signifient. Quelles conséquences pour les groupes que l'on obtiendra ?
+Pour cela, utilisez la fonction `hclu_hierarclust()` du package `bioregion`. Choisissez la méthode que vous préférez tester avec `optimal_tree_method`.
+
+Regardez le coefficient de corrélation cophénétique de l'arbre final, et comparez entre le jeu de données filtré et le non filtré.
+
+
+Affichez l'arbre avec `plot()`. 
+
+
+
 
 # 5. Evaluer la qualité de la classification consensus
 
 Quelle est la valeur du coefficient cophénétique de votre arbre ? Que vous dit cette valeur ? Cette valeur indique à quel point l'arbre hiérarchique représente fidèlement les distances originales entre sites. Plus elle est proche de 1, meilleure est la représentation.
 
+**Question** Quelles conséquences sur la qualité de l'arbre de filtrer le jeu de données ?
+
 
 # 6. Rechercher la hauteur à laquelle couper l'arbre
 
-Pour identifier une partition dite 'optimale' sur un arbre, il faut le découper de nombreuses fois (chaque découpe est appelée une partition), et analyser comment les partitions se comportent par rapport à des métriques d'évaluation. Par exemple, sur notre jeu de données, il y a 162 sites, donc on peut essayer de regarder toutes partitions possibles allant de 2 clusters à 161 clusters. Ensuite, on va calculer des métriques sur chaque partition, et identifier une ou plusieurs partitions optimales.
+Pour identifier une partition dite 'optimale' sur un arbre, il faut le découper de nombreuses fois (chaque découpe est appelée une partition), et analyser comment les partitions se comportent par rapport à des métriques d'évaluation. On va commencer par un découpage assez haut dans l'arbre, et donc on va regarder des nombres de clusters limités au début, on analysera comment le découpage se comporte **entre 2 et 50 clusters maximum.**
 
-Pour cet exercice je vous propose d'utiliser la métrique de Holt et al. 2013, qui consiste à comparer la "dissimilarité expliquée par les clusters" (= somme des dissimilarités entre sites qui appartiennent à des clusters différents) à la dissimilarité totale (= somme des dissimilarités de la matrice de distance initiale). Par exemple, si vous choisissez de couper l'arbre pour avoir 2 clusters, dans ce cas la "dissimilarité expliquée par les clusters" consiste à faire la somme de la dissimilarité entre sites qui appartiennent à des clusters différents. Si deux sites appartiennent au même cluster, leur distance ne sera pas comptabilisée dans la somme de "dissimilarité expliquée par les clusters". 
+Pour cet exercice je vous propose d'utiliser la métrique de Holt et al. 2013, qui consiste à comparer la "dissimilarité expliquée par les clusters" (= somme des dissimilarités entre sites qui appartiennent à des clusters différents) à la dissimilarité totale (= somme des dissimilarités de la matrice de distance initiale). En gros, on élimine du calcul toutes les distance intra-cluster, et on ne regarde que les distances inter-clusters.
 
-La première étape consiste donc à découper l'arbre de nombreuses fois, par exemple essayer de le découper pour obtenir 2 clusters, 3 clusters, 4 clusters, etc. jusque 50 clusters. _Vous pouvez faire plus si vous le souhaitez, mais ça sera plus long à calculer, et en général on évite d'analyser des partitions avec trop de clusters car c'est beaucoup plus difficiles à interpréter pour nous humains aux capacités cognitives limitées ;)_
+On va procéder comme ceci :
 
-Pour découper l'arbre, utilisez la fonction `cut_tree()` et demandez de 2 à 50 clusters. Cela vous donnera un objet en sortie qui contient 49 partitions. Ensuite, calculez des métriques sur chaque partition avec la fonction `partition_metrics()`. Choisissez bien de calculer la métrique de Holt et al. 2013. Enfin, utilisez ensuite la fonction `find_optimal_n()` pour trouver la partition optimale en recherchant un nombre de clusters qui correspond à **trois seuils de dissimilarité expliquée : 40%, 50% et 60%**. *Note: seuil se traduit cutoff en anglais*
+(1) on découpe l'arbre de nombreuses fois, allant de 2 à 50 clusters
 
-Pourquoi utiliser des seuils relativement bas (40-60%), alors que Holt et al. ont utilisé des seuils de 90 à 99.9% ? Parce qu'il s'agit ici d'une étude régionale avec peu de dissimilarité entre les sites, contrairement à Holt et al. qui ont réalisé une étude globale avec des sites très différents. Si vous utilisez un seuil à 90 ou plus, vous allez avoir un grand nombre de clusters très peu différents entre eux, ce qui sera très peu informatif.
+(2) pour chaque découpe, on calcule la métrique de dissimilarité entre clusters
 
-Une fois que vous avez identifié les nombres de clusters optimaux pour ces trois seuils, choisissez celui qui vous semble le plus pertinent (par exemple le seuil à 50%), et recoupez l'arbre avec ce nombre de clusters optimal.
+(3) on fait un graphe métrique ~ nombre de clusters
 
-**Astuce** : Vous pouvez afficher la hiérarchie des clusters obtenue dans la console en utilisant la fonction générique `summary()` sur votre objet de découpage d'arbre. Cette fonction vous donnera un aperçu clair de la structure hiérarchique de vos clusters.
+(4) on prend une décision, soit arbitraire, soit en utilisant une méthode
 
-Quels sont les nombres de clusters aux seuils de 40%, 50% et 60% de dissimilarité expliquée ?
-A quelles hauteurs l'arbre a-t-il été coupé ?
+## Etape 1
+
+Utilisez la fonction `cut_tree()` et spécifiez que vous voulez de 2 à 50 clusters. Cela vous donnera un objet en sortie qui contient 49 partitions. 
+
+## Etape 2
+
+Calculez la métrique sur chaque partition avec la fonction `bioregionalization_metrics()`. Choisissez bien de calculer la métrique de Holt et al. 2013.
+
+## Etape 3 et 4 (on fait les deux ensemble)
+
+Faites le graphe et choisissez un critère d'optimisation. Je vous propose de commencer par une méthode simple, regarder là où on a le plus grand "saut" dans la métrique, et couper l'arbre à ce niveau. Concrètement, ça veut dire regarder la différence entre chaque découpe, et ne retenir que là où la différence est la plus élevée. 
+
+Pour faire ça, utilisez `find_optimal_n()`, et utilisez le critère `increasing_step`, avec un seuil qui s'assure que vous ne retenez que la différence la plus élevée (e.g., `step_quantile = 0.99`)
+
+**Question**
+Combien de clusters pour chaque arbre ? A quelle hauteur l'arbre a-t-il été coupé ?
 
 
 # 7. Faire la carte des clusters obtenus
 
-Le package `bioregion` fournit maintenant des fonctions dédiées pour créer facilement des cartes de biorégions avec des couleurs automatiques.
-
-Tout d'abord, transformez le tableau de localisation des sites en objet spatial de type `sf` avec la commande `st_as_sf()`, en spécifiant bien quelles sont les colonnes contenant les coordonnées avec l'argument `coords`. Indiquez aussi quel est le système de coordonnées : `crs = "EPSG:4326"` (EPSG:4326 est le petit code international pour le système de coordonnées WGS84).
-
-Ensuite, attribuez automatiquement des couleurs à vos clusters avec la fonction `bioregion_colors()` :
-
-```{r eval = FALSE}
-# Ajouter des couleurs aux clusters
-hclust_colored <- bioregion_colors(hclust_subtidal, 
-                                   palette = "Vivid",
-                                   cluster_ordering = "n_sites")
-```
-
-Cette fonction attribue intelligemment des couleurs vives aux clusters les plus importants (selon le nombre de sites), et des nuances de gris aux clusters moins importants.
-
-Enfin, créez la carte avec la fonction `map_bioregions()` :
-
-```{r eval = FALSE}
-map_bioregions(hclust_colored, sites)
-```
-
-Voilà ! En deux lignes de code vous obtenez une carte avec des couleurs cohérentes et automatiques.
-
-Si vous souhaitez personnaliser la carte, vous pouvez ajouter un fond avec le package `rnaturalearth`. Par exemple :
-
-```{r eval = FALSE}
-library(rnaturalearth)
-wm <- ne_coastline(scale = 50, returnclass = "sf")
-
-# Carte des biorégions
-map_bioregions(hclust_colored, sites)
-
-# Ajouter le trait de côte
-plot(wm, add = TRUE)
-```
+Commencez par attribuer des couleurs à vos clusters automatique avec la fonction `bioregion_colors()`. Ensuite, créez la carte des régions avec `map_bioregions()`, comme dans le TP sur les réseaux, le fonctionnement est identique !
 
 
 Décrivez le résultat que vous obtenez : 
@@ -150,13 +175,21 @@ Décrivez le résultat que vous obtenez :
 
 - Comment sont-ils distribués ? 
 
-- Est-ce que les sites sont assemblés en clusters en suivant un patron spatial évident ? 
-
-- Est-il possible que d'autres facteurs expliquent les clusters identifiés pour les sites ?
-
-- Quelles difficultés éprouvez-vous à l'interprétation ? Comment faudrait-il y remédier ?
+- Fallait-il filtrer ou non le jeu de données pour éliminer les cellules à faible richesse ? Pourquoi ?
 
 
-# 8. Si vous avez fini en avance : explorez les autres méthodes de clustering non hiérarchique !
+
+# 8. Si vous avez fini en avance : 
+
+Comparez avec la méthode des réseaux, sur les jeux filtrés et non filtrés.
+
+Qu'en pensez-vous ? La méthode des réseaux gère-t-elle mieux les jeux de données non filtrés et biaisés ?
+
+
+
+
+
+
+
 
 [Vous pouvez accéder au site qui détaille les différentes fonctions du package ici](https://biorgeo.github.io/bioregion)

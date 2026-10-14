@@ -22,138 +22,264 @@ library(rnaturalearth)
 # 1. Chargement des données
 
 ```{r}
-# Occurrence database
-subtidaldb <- readRDS("./data/invertebres_benthiques.RDS")
+# Matrice de présence-absence (sites x espèces)
+comat <- readRDS("./data/araignees/araignees_wp_100km_comat.RDS")
 
+# Grille des sites
+sites <- readRDS("./data/araignees/araignees_wp_100km_sites.RDS")
 
-# Site position
-sites <- readRDS("./data/sites_invertebresbenthiques.RDS")
+dim(comat)
+```
+
+## Calcul de la richesse spécifique et filtrage des données
+
+Les lignes de la matrice sont les sites et les colonnes les espèces : la somme d'une ligne donne le nombre d'espèces présentes dans le site (la richesse), la somme d'une colonne donne le nombre de sites occupés par l'espèce (l'occurrence).
+
+```{r}
+richness <- rowSums(comat)
+
+head(richness)
+```
+
+## Inspection des données : richesse et effort d'échantillonnage
+
+```{r}
+head(sites)
+
+# Vérification : la richesse calculée correspond à celle fournie
+sites$richness <- richness[match(sites$Site,
+                                 names(richness))]
+```
+
+```{r fig.width=8, fig.height=8}
+# Carte de la richesse spécifique
+plot(sites["richesse"])
+
+# Carte de l'effort d'échantillonnage (échelle log, car très asymétrique)
+plot(sites["n_occurrences"], logz = TRUE)
+```
+
+**Question** Que constatez-vous ?
+
+Il y a un biais spatial de l'effort d'échantillonage vers l'Europe de l'Ouest, avec moins de données en Europe de l'est. Certains pays (France, Benelux, UK, Allemagne, Scandinavie) sont surreprésentés. En France, la richesse spécifique augmente vers la région Méditerranéenne.
+
+## Filtrez le jeu de données
+
+```{r}
+# Version filtrée : on retire les cellules de moins de 50 espèces, trop
+# peu échantillonnées pour avoir une composition fiable
+comat_50 <- comat[richness >= 50, ]
+# Les espèces qui n'étaient présentes que dans les cellules retirées
+comat_50 <- comat_50[, colSums(comat_50) > 0]
+
+sites_50 <- sites[sites$richness >= 50, ]
+
+dim(comat)
+dim(comat_50)
+
+plot(sites_50["richesse"])
 ```
 
 # 2. Calcul des distances entre bassins avec l’indice ßsim [3]
 
 ```{r}
-dist_subtidal <- dissimilarity(t(as.matrix(subtidaldb)))
+dist_araignees <- dissimilarity(comat,
+                                metric = "Simpson")
 
+dist_araignees_50 <- dissimilarity(comat_50,
+                                   metric = "Simpson")
 
 ```
 
 # 3. Visualisation des distances entres sites
 ```{r fig.width=8, fig.height=8}
-matrix_dist <- net_to_mat(dist_subtidal,
+matrix_dist <- net_to_mat(dist_araignees,
                           weight = TRUE, squared = TRUE, symmetrical = TRUE)
-matrix_dist <- as.dist(matrix_dist)
 
-subtidal_nmds <- metaMDS(matrix_dist, center=TRUE)
-plot(subtidal_nmds)
+focal_cell <- sample(sites$Site, 1)
+
+# Distances entre la cellule focale et toutes les cellules
+sites$focal_dist <- matrix_dist[as.character(focal_cell),
+                                as.character(sites$Site)]
+
+plot(sites["focal_dist"])
+
 ```
-
-Qu'observez-vous sur la NMDS ? Comment est distribuée la diversité beta ? Semble-t-il y avoir un effet spatial ou pas ? 
-
-Il semble y avoir un gradient de dissimilarité entre les sites situés autour de la Bretagne. D'une manière générale, plus les sites sont proches spatialement, plus ils semblent similaires. Cependant il y a des exceptions, notamment dans la rade de Brest ou au niveau de Lannion, où des sites très proches semblent parfois être très dissimilaires, ce qui ne peut donc uniquement être expliqué par la proximité spatiale.
 
 # 4. Faire la classification ascendante hiérarchique 
 
 ```{r}
-hclust_subtidal <- hclu_hierarclust(dist_subtidal)
+hclust_araignees <- hclu_hierarclust(dist_araignees,
+                                     optimal_tree_method = "ihct",
+                                     ihct_n_workers = 4)
 
-plot(hclust_subtidal)
+plot(hclust_araignees)
+
+hclust_araignees_50 <- hclu_hierarclust(dist_araignees_50,
+                                        optimal_tree_method = "ihct",
+                                        ihct_n_workers = 4)
+
+plot(hclust_araignees_50)
 ```
 
-La dissimilarité entre les sites est assez faible, inférieure à 0.4, et plutôt de l'ordre de 0.1 à 0.3. Cela signifie que les sites partagent un grand nombre d'espèces en commun, et donc la répartition en groupe impliquera des groupes faiblement différents dans leur composition en espèces.
+
+
+
+
+
+**Question** Qu'est-ce que l'arbre nous dit des valeurs de dissimilarité ? Regardez les valeurs de dissimilarité sur l'arbre, et réfléchissez à ce qu'elles signifient. 
+
+Les valeurs de dissimilarité sont comprises entre 0 et 0.8 environ, avec beaucoup de sites reliés entre 0.4 et 0.5. Cela signifie qu'il y a un pool d'espèces communes entre tous les sites, à hauteur de 20% de la diversité beta environ, et que de nombreux sites partagent près de 50% de leur composition en espèces. 
 
 
 # 5. Evaluer la qualité de la classification consensus
 
 ```{r}
-hclust_subtidal
+hclust_araignees
+
+hclust_araignees_50
 ```
 
-La valeur de corrélation cophénétique de l'arbre est affichée dans le résumé ci-dessus. Cette valeur indique à quel point l'arbre hiérarchique représente fidèlement les distances originales entre sites. Plus elle est proche de 1, meilleure est la représentation. Dans notre cas, la valeur est assez faible, ce qui indique que l'arbre ne représente pas complètement bien les relations entre les sites.
 
-L'arbre étant une simplification de la matrice de distance, il existe toujours un certain degré de perte d'information, mais l'algorithme IHCT minimise cette perte en construisant un arbre consensus robuste basé sur la décision majoritaire à travers de nombreuses randomisations.
+**Question** Quelles conséquences sur la qualité de l'arbre de filtrer le jeu de données ?
+
+Les sites à faible richesse abaissent la qualité de l'arbre. Ils créent de l'incertitude, car ils sont difficiles à classer et compromettent la topologie de l'arbre.
 
 # 6. Rechercher la hauteur à laquelle couper l'arbre
 
+## Etape 1
+
 ```{r}
-hclust_subtidal <- cut_tree(hclust_subtidal,
+hclust_araignees <- cut_tree(hclust_araignees,
                             n_clust = 2:50)
-summary(hclust_subtidal)
+summary(hclust_araignees)
+
+hclust_araignees_50 <- cut_tree(hclust_araignees_50,
+                               n_clust = 2:50)
+summary(hclust_araignees_50)
 ```
+
+## Etape 2
 
 ```{r}
-eval_partitions <- bioregionalization_metrics(hclust_subtidal,
-                                     dissimilarity = dist_subtidal,
-                                     eval_metric = "pc_distance")
+eval_partitions <- bioregionalization_metrics(hclust_araignees,
+                                     dissimilarity = dist_araignees,
+                                     eval_metrics = "prop_between_dissim")
 
-# Tester trois seuils : 40%, 50% et 60%
-optimal_40 <- find_optimal_n(eval_partitions, criterion = "cutoff", 
-                             metric_cutoffs = 0.40)
-optimal_50 <- find_optimal_n(eval_partitions, criterion = "cutoff", 
-                             metric_cutoffs = 0.50)
-optimal_60 <- find_optimal_n(eval_partitions, criterion = "cutoff", 
-                             metric_cutoffs = 0.60)
-
-cat("Seuil 40% :", optimal_40$optimal_nb_clusters$pc_distance, "clusters\n")
-cat("Seuil 50% :", optimal_50$optimal_nb_clusters$pc_distance, "clusters\n")
-cat("Seuil 60% :", optimal_60$optimal_nb_clusters$pc_distance, "clusters\n")
-
-
-hclust_subtidal <- cut_tree(hclust_subtidal,
-                            n_clust = c(optimal_40$optimal_nb_clusters$pc_distance,
-                                optimal_50$optimal_nb_clusters$pc_distance,
-                                optimal_60$optimal_nb_clusters$pc_distance))
-
-summary(hclust_subtidal)
+eval_partitions_50 <- bioregionalization_metrics(hclust_araignees_50,
+                                     dissimilarity = dist_araignees_50,
+                                     eval_metrics = "prop_between_dissim")
 ```
 
-Avec le seuil à 50%, nous obtenons `r optimal_50$optimal_nb_clusters$pc_distance` clusters, et la hauteur de coupe est de `r round(hclust_subtidal$cluster_info$output_cut_height, 3)`. La fonction `summary()` permet d'afficher la hiérarchie des clusters de manière claire.
+## Etape 3 et 4
+
+```{r}
+optimal_n <- find_optimal_n(eval_partitions,
+                            criterion = "increasing_step",
+                            step_quantile = .99)
+
+hclust_araignees <- cut_tree(hclust_araignees,
+                            n_clust = optimal_n$optimal_n[[1]])
+
+summary(hclust_araignees)
+
+
+optimal_n_50 <- find_optimal_n(eval_partitions_50,
+                               criterion = "increasing_step",
+                               step_quantile = .99)
+
+hclust_araignees_50 <- cut_tree(hclust_araignees_50,
+                               n_clust = optimal_n_50$optimal_n[[1]])
+
+summary(hclust_araignees_50)
+```
+
+**Question**
+Combien de clusters pour chaque arbre ? A quelle hauteur l'arbre a-t-il été coupé ?
+
+Sur le jeu de données complet, nous obtenons `r hclust_araignees$cluster_info$n_clust` clusters, et la hauteur de coupe est de `r round(hclust_araignees$cluster_info$output_cut_height, 3)`. Sur le jeu de données filtré, nous obtenons `r hclust_araignees_50$cluster_info$n_clust` clusters, et la hauteur de coupe est de `r round(hclust_araignees_50$cluster_info$output_cut_height, 3)`. La fonction `summary()` permet d'afficher la hiérarchie des clusters de manière claire.
 
 
 
 # 7. Faire la carte des clusters obtenus
 
 ```{r}
-# Transformer les sites en objet sf
-sites_sf <- st_as_sf(sites,
-                     coords = c("X", "Y"),
-                     crs = "EPSG:4326")
-
 # Ajouter automatiquement des couleurs aux clusters
-hclust_colored <- bioregion_colors(hclust_subtidal, 
-                                   palette = "Vivid",
-                                   cluster_ordering = "n_sites")
+hclust_colored <- bioregion_colors(hclust_araignees)
 
-# Créer la carte avec map_bioregions
-# Mettez scale = 50 dans la ligne ci-dessous si vous n'arrivez pas à lancer la commande
-wm <- ne_coastline(scale = 10, returnclass = "sf")
-map_bioregions(hclust_colored, sites_sf, bioregionalization = 1,
-               reset = FALSE,
-               pch = 16)
 
-# Ajouter le trait de côte
-plot(wm[1], add = TRUE)
+map_bioregions(bioregionalization = hclust_colored, 
+               map = sites, 
+               partition_index = 2)
+
+
+hclust_colored_50 <- bioregion_colors(hclust_araignees_50,
+                                      palette = "Vivid",
+                                      cluster_ordering = "n_sites")
+
+map_bioregions(bioregionalization = hclust_colored_50,
+               map = sites_50,
+               partition_index = 2)
 ```
 
-Décrivez le résultat que vous obtenez : 
+Décrivez le résultat que vous obtenez :
 
 - Semble-t-il y avoir différents clusters ?
 
-On trouve différents clusters, même s'ils sont, au final, assez peu dissimilaires (cf. illustration de l'arbre à l'étape #5). Retenez que, la méthode de Holt (ou tout autre méthode similaire) vous donnera toujours des clusters. Ces clusters peuvent avoir un sens biologique, mais n'oubliez pas la hauteur à laquelle vous avez coupé l'arbre. Ici, la hauteur d'environ 0.3 indique que pour appartenir à des clusters différents, les sites ne doivent avoir en moyenne que 30% de dissimilarité. Ce seuil peut sembler faible, mais il s'agit d'une étude à l'échelle régionale, et donc il est cohérent qu'il soit faible comparé à des analyses à échelles plus larges où les faunes sont plus dissimilaires et donc où le seuil tournera à des valeurs bien élevées. 
+Ce n'est pas clair pour le jeu complet qui contient un gros cluster et plein de petits. Le découpage est de mauvaise qualité, sans réponse évidente.
 
-- Comment sont-ils distribués ? 
+Pour le jeu filtré, le signal devient très clair, avec deux grands clusters et quelques petits.
 
-Les sites proches sont généralement dans les mêmes clusters, tandis que les sites éloignés sont dans des clusters différents. Cependant, on note qu'il existe des sites parfois très proches qui peuvent appartenir à des clusters différents (rade de Brest, Ouessant, Lannion).
+- Comment sont-ils distribués ?
 
-- Est-ce que les sites sont assemblés en clusters en suivant un patron spatial évident ? 
+Dans le jeu filtré, on voit bien l'Europe tempérée et boréale qui se séparent de la Méditerranée. On note aussi la Macaronésie (Canaries, Madère) et quelques petits clusters isolés (Oural, Levant, Maroc).
 
-En général oui, avec des différences notables localement.
+- Fallait-il filtrer ou non le jeu de données pour éliminer les cellules à faible richesse ? Pourquoi ?
 
-- Est-il possible que d'autres facteurs expliquent les clusters identifiés pour les sites ?
-
-Oui, car des sites proches sont dans des clusters très différents. Une analyse des clusters en fonction des paramètres environnementaux permettrait de le démontrer. En l'occurrence, la turbidité, l'exposition des tombants, leur degré de perturbation peuvent expliquer l'appartenance à différents clusters.
+Oui. Les cellules pauvres sont surtout sous-échantillonnées. Elles partagent peu d'espèces avec les autres et forment de nombreux petits clusters sans sens biologique. Après filtrage, l'arbre est de meilleure qualité et les régions sont interprétables. En contrepartie, on perd les régions mal échantillonnées (Afrique du Nord, Moyen-Orient, Russie).
 
 
-- Quelles difficultés éprouvez-vous à l'interprétation ? Comment faudrait-il y remédier ?
 
-Il y a trop de clusters et les couleurs sont trop proches ce qui rend l'interprétation très difficile. Il faudrait réduire le nombre de clusters, ou bien les représenter séparément pour bien visualiser quels clusters sont distribués où.
+# 8. Comparaison avec la méthode des réseaux (jeu complet)
+
+```{r}
+# Conversion de la matrice en réseau sites - espèces
+net_araignees <- mat_to_net(comat)
+
+araignees_infomap <- netclu_infomap(net = net_araignees,
+                                    weight = FALSE,
+                                    binpath = "c:/r",
+                                    numtrials = 100,
+                                    show_hierarchy = TRUE,
+                                    bipartite = TRUE,
+                                    bipartite_version = FALSE,
+                                    seed = 123)
+
+araignees_infomap <- bioregion_colors(araignees_infomap,
+                                      palette = "Safe",
+                                      cluster_ordering = "n_both")
+
+map_bioregions(bioregionalization = araignees_infomap,
+               map = sites,
+               partition_index = 2)
+
+net_araignees_50 <- mat_to_net(comat_50)
+
+araignees_infomap_50 <- netclu_infomap(net = net_araignees_50,
+                                    weight = FALSE,
+                                    binpath = "c:/r",
+                                    numtrials = 100,
+                                    show_hierarchy = TRUE,
+                                    bipartite = TRUE,
+                                    bipartite_version = FALSE,
+                                    seed = 123)
+
+araignees_infomap_50 <- bioregion_colors(araignees_infomap_50,
+                                         palette = "Safe",
+                                         cluster_ordering = "n_both")
+
+map_bioregions(bioregionalization = araignees_infomap_50,
+               map = sites_50,
+               partition_index = 2)
+
+```
