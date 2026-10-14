@@ -356,6 +356,13 @@ Naturelle</h4>
 </div>
 
 
+<style type="text/css">
+.encart-facultatif {
+border-left: 5px solid #3498db;
+background-color: #eaf4fc;
+padding: 1em 1.2em;
+}
+</style>
 <div id="introduction-ฅﻌฅ" class="section level1">
 <h1>Introduction ฅ՞•ﻌ•՞ฅ</h1>
 <p>Vous avez à votre disposition deux bases de données sur la
@@ -375,15 +382,42 @@ réseaux et les cartes entre les deux bases.</p>
 <p>Le package <code>bioregion</code> est disponible sur le CRAN en
 version stable, mais des versions plus à jour, avec de nouvelles
 fonctionnalités, sont disponibles sur GitHub.</p>
-<p>Pour ce TP, nous allons utiliser une version de
-<code>bioregion</code> qui n’est pas encore sur le CRAN, afin d’inclure
-des fonctionnalités nouvelles pour vous faciliter la vie !</p>
-<p>Pour installer un package depuis GitHub, il faut utiliser le package
-<code>pak</code>. Si vous ne l’avez pas, installez-le avec
+<p>Deux façons d’installer le package :</p>
+<ol style="list-style-type: decimal">
+<li><p>La méthode classique, sur le CRAN, qui est mise à jour tous les 6
+mois à 1 an environ. Dernière mise à jour, le week-end dernier, donc ça
+sera très bien pour aujourd’hui !</p></li>
+<li><p>Installer depuis notre dépôt de développement, ce qui permet
+d’accéder aux dernières fonctionnalités et/ou corrections de bug. Dans
+ce cas on installe depuis GitHub, avec le package <code>pak</code>. Si
+vous ne l’avez pas, installez-le avec
 <code>install.packages(&quot;pak&quot;)</code>. <code>pak</code> est un package
 qui facilite l’installation de packages R depuis des sources qui ne sont
-pas forcément le CRAN (e.g. GitHub).</p>
+pas forcément le CRAN (e.g. GitHub).</p></li>
+</ol>
 <pre class="r"><code>pak::pkg_install(&quot;bioRgeo/bioregion&quot;, ask = FALSE)                        </code></pre>
+<div class="encart-facultatif">
+<p><strong>Comment avoir les outils pour installer tous les packages R
+hors CRAN ? </strong></p>
+<p><em>Ce n’est pas nécessaire de suivre le contenu de cet encart pour
+le TP, sauf si vous avez des problèmes d’installation.</em></p>
+<p>L’installation de packages R depuis GitHub nécessite souvent d’avoir
+installé des “build tools”, c’est-à-dire des outils qui permettent de
+“compiler” le code. Si vous avez un message d’erreur lors de
+l’installation depuis GitHub, deux options fréquentes : soit vous n’avez
+pas les build tools, soit votre R n’arrive pas à les trouver dans votre
+ordinateur.</p>
+<ul>
+<li>Utilisateurs windows : le plus simple est d’installer le package R
+<code>installr</code>, et ensuite de lancer
+<code>installr::install.Rtools()</code>. Il faut ensuite redémarrer
+R.<br />
+</li>
+<li>Utilisateurs mac : ouvrez un terminal et lancez la ligne suivante
+<code>xcode-select --install</code>, qui vous installera les outils de
+compilation nécessaires pour les packages R.</li>
+</ul>
+</div>
 </div>
 <div id="installer-les-exécutables-pour-les-méthodes-basées-sur-les-réseaux" class="section level2">
 <h2>Installer les exécutables pour les méthodes basées sur les
@@ -670,7 +704,7 @@ cluster.</p>
 </div>
 <div id="faites-une-carte-des-régions" class="section level1">
 <h1>5. Faites une carte des régions</h1>
-<p>Cette année, je vous ai facilité la tâche en écrivant des fonctions
+<p>En 2025, je vous ai facilité la tâche en écrivant des fonctions
 dédiées dans le package <code>bioregion</code> ʕ•́ᴥ•̀ʔっ. Moins de code,
 plus de temps pour l’interprétation des résultats !</p>
 <p><strong>Question :</strong> Faites la carte au niveau 2 (deuxième
@@ -694,11 +728,16 @@ supposant que vous ayez nommé votre objet <code>fish_clusters1</code>,
 <h2>5.2 Faire la carte</h2>
 <p>Vous y êtes presque ! Maintenant, il faut utiliser
 <code>map_bioregions()</code> pour faire la carte. Cette fonction prend
-en entrée : * les clusters (avec les couleurs assignées) : argument
-<code>bioregionalization</code> * les polygones spatialisés des bassins
-: argument <code>map</code> * le niveau hiérarchique à afficher (ici on
-veut le niveau 2) : argument <code>partition_index</code></p>
-<p><strong>/! Attention</strong>, partition_index compte les colonnes,
+en entrée :</p>
+<ul>
+<li><p>les clusters (avec les couleurs assignées) : argument
+<code>bioregionalization</code></p></li>
+<li><p>les polygones spatialisés des bassins : argument
+<code>map</code></p></li>
+<li><p>le niveau hiérarchique à afficher (ici on veut le niveau 2) :
+argument <code>partition_index</code></p></li>
+</ul>
+<p><strong>/!\ Attention</strong>, partition_index compte les colonnes,
 et la première colonne est une colonne identifiant les sites (ID).
 <strong>L’index du niveau 2 est donc la colonne 3.</strong></p>
 </div>

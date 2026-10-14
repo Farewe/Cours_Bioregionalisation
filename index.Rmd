@@ -6,6 +6,15 @@ editor_options:
   chunk_output_type: inline
 ---
 
+```{css, echo=FALSE}
+.encart-facultatif {
+  border-left: 5px solid #3498db;
+  background-color: #eaf4fc;
+  padding: 1em 1.2em;
+}
+```
+
+
 
 ```{R echo=FALSE}
 unlink("data/data_cours/data_cours.zip")
@@ -26,13 +35,32 @@ Ici, vous appliquerez la première des deux approches vues en cours : les résea
 
 Le package `bioregion` est disponible sur le CRAN en version stable, mais des versions plus à jour, avec de nouvelles fonctionnalités, sont disponibles sur GitHub.
 
-Pour ce TP, nous allons utiliser une version de `bioregion` qui n'est pas encore sur le CRAN, afin d'inclure des fonctionnalités nouvelles pour vous faciliter la vie !
+Deux façons d'installer le package :
 
-Pour installer un package depuis GitHub, il faut utiliser le package `pak`. Si vous ne l'avez pas, installez-le avec `install.packages("pak")`. `pak` est un 
+(1) La méthode classique, sur le CRAN, qui est mise à jour tous les 6 mois à 1 an environ. Dernière mise à jour, le week-end dernier, donc ça sera très bien pour aujourd'hui !
+
+
+(2) Installer depuis notre dépôt de développement, ce qui permet d'accéder aux dernières fonctionnalités et/ou corrections de bug. Dans ce cas on installe depuis  GitHub, avec le package `pak`. Si vous ne l'avez pas, installez-le avec `install.packages("pak")`. `pak` est un 
 package qui facilite l'installation de packages R depuis des sources qui ne sont pas forcément le CRAN (e.g. GitHub).
+
+
 ```{r eval = FALSE}
 pak::pkg_install("bioRgeo/bioregion", ask = FALSE)                        
 ```
+
+
+::: {.encart-facultatif}
+**Comment avoir les outils pour installer tous les packages R hors CRAN ? **
+
+*Ce n'est pas nécessaire de suivre le contenu de cet encart pour le TP, sauf si vous avez des problèmes d'installation.*
+
+L'installation de packages R depuis GitHub nécessite souvent d'avoir installé des "build tools", c'est-à-dire des outils qui permettent de "compiler" le code. Si vous avez un message d'erreur lors de l'installation depuis GitHub, deux options fréquentes : soit vous n'avez pas les build tools, soit votre R n'arrive pas à les trouver dans votre ordinateur.
+
+- Utilisateurs windows : le plus simple est d'installer le package R `installr`, et ensuite de lancer `installr::install.Rtools()`. Il faut ensuite redémarrer R.  
+- Utilisateurs mac : ouvrez un terminal et lancez la ligne suivante `xcode-select --install`, qui vous installera les outils de compilation nécessaires pour les packages R.
+:::
+
+
 
 ## Installer les exécutables pour les méthodes basées sur les réseaux
 
@@ -158,8 +186,9 @@ Faites la même pour le nombre d'espèces par cluster.
 
 # 5. Faites une carte des régions
 
-Cette année, je vous ai facilité la tâche en écrivant des fonctions dédiées dans le package `bioregion` ʕ•́ᴥ•̀ʔっ.
+En 2025, je vous ai facilité la tâche en écrivant des fonctions dédiées dans le package `bioregion` ʕ•́ᴥ•̀ʔっ.
 Moins de code, plus de temps pour l'interprétation des résultats !
+
 
 **Question :**
 Faites la carte au niveau 2 (deuxième partition) pour fishdb1.
@@ -179,12 +208,16 @@ fish_clusters1 <- bioregion_colors(fish_clusters1) # Cette fonction retourne le 
 ## 5.2 Faire la carte 
 
 Vous y êtes presque ! Maintenant, il faut utiliser `map_bioregions()` pour faire la carte. Cette fonction prend en entrée :
+
 * les clusters (avec les couleurs assignées) : argument `bioregionalization`
+
 * les polygones spatialisés des bassins : argument `map`
+
 * le niveau hiérarchique à afficher (ici on veut le niveau 2) : argument `partition_index`
   
   
-**/!\ Attention**, partition_index compte les colonnes, et la première colonne est une colonne identifiant les sites (ID). **L'index du niveau 2 est donc la colonne 3.**
+**/!\\\ Attention**, partition_index compte les colonnes, et la première colonne est une colonne identifiant les sites (ID). **L'index du niveau 2 est donc la colonne 3.**
+
 
 
 # 6. Ecrire le réseau biogéographique pour Gephi
